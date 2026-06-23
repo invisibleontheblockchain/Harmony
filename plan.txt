@@ -1,0 +1,3942 @@
+Harmony Codebase Gap Analysis & Delivery Roadmap
+Harmony Codebase Gap Analysis & Delivery Roadmap
+Master Build Reference — Version 1.0
+June 22, 2026
+Repo: https://github.com/invisibleontheblockchain/Harmony.git | Audit Date: 2026-06-22 | Total
+Files Audited: 36 | Commits: 2
+HOW TO USE THIS DOCUMENT: Open it every morning. Section 1 tells you what exists.
+Sections 2–3 tell you what's missing. Section 6 tells you what to build next. Section 8 tells you
+what to do today.
+36Files Audited 3Critical Bugs 12High/Medium Bugs 0Web App Files
+(apps/web missing)
+Section 1: Repository Audit
+1.1 Annotated File Tree
+Every file in the repository is catalogued below with its implementation status, a description of its
+contents, and the blueprint layer it corresponds to. Status codes: Real = fully implemented; Partial
+= exists but incomplete; Bug = exists but contains a defect that will cause failures; Missing =
+required by blueprint but absent from repo.
+Table 1 — Complete Annotated File Tree (36 files)
+File Path Description Status Layer
+.env.example All environment
+variables documented
+with placeholder values.
+Complete and accurate.
+Real Config
+.gitignore Standard Node.js +
+Python ignores. Covers
+node_modules, dist,
+build, .env.
+Real Config
+README.md Brief architecture
+overview. Describes
+monorepo structure and
+tech stack.
+Real Config
+Built with Spine AI on 2026-06-23 1
+package.json Root npm workspaces
+config. Contains
+spurious
+multichain-trading-bot:
+file:../.. dependency. No
+per-package
+package.json files exist
+anywhere in the repo.
+Bug Config
+tsconfig.json ES2022, NodeNext,
+strict mode, react-native
+JSX. Correct
+configuration.
+Real Config
+apps/api/src/index.ts Fastify 4 server.
+Registers all routes.
+Contains .ts extension
+import bug on tracks
+route — will fail at
+runtime under
+NodeNext.
+Bug Streaming / Royalty /
+Payments
+apps/api/src/auth.ts Clerk JWT verification
+middleware.
+requireAuth hook used
+by most routes.
+Real Config / Auth
+apps/api/src/db.ts pg Pool wrapper.
+Includes payout batch
+helper functions.
+Real Royalty
+apps/api/src/routes/track
+s.ts
+5 endpoints: upload-url,
+POST /tracks, GET
+/tracks, GET /tracks/:id,
+GET /tracks/search.
+Fully implemented.
+Real Streaming
+apps/api/src/routes/pay
+ments.ts
+POST
+/api/payments/onboard
+and
+/api/payments/purchase.
+CRITICAL: Both routes
+have NO preHandler:
+[requireAuth] guard.
+Any unauthenticated
+caller can trigger Stripe
+flows.
+Bug Payments
+Built with Spine AI on 2026-06-23 2
+apps/api/src/routes/reco
+mmendations.ts
+Returns recent tracks
+for ALL users
+regardless of identity.
+TODO comment to wire
+Python ALS. Not a real
+recommendation
+engine.
+Partial Discovery
+apps/api/src/routes/web
+hooks.ts
+Stripe webhook handler
+for
+payment_intent.succeed
+ed, transfer.created,
+transfer.failed. Fully
+implemented.
+Real Payments
+apps/mobile/App.tsx Root component.
+ClerkProvider +
+HarmonyWalletProvider
++ PlayerProvider +
+NavigationContainer.
+Correct structure.
+Real Mobile
+apps/mobile/src/navigati
+on/AppNavigator.tsx
+Bottom tab nav (5 tabs)
++ Stack with Player
+modal + MiniPlayer.
+Fully implemented.
+Real Mobile
+apps/mobile/src/provider
+s/HarmonyWalletProvid
+er.tsx
+Phantom + Solflare
+wallet adapters, Solana
+devnet. Uses
+@solana/wallet-adapterreact-ui which is a WEB
+library — incompatible
+with React Native.
+Bug Blockchain / Mobile
+apps/mobile/src/provider
+s/PlayerProvider.tsx
+useProgress is
+imported from
+react-native-track-player
+but NEVER CALLED.
+Progress state is
+initialized as {position:0,
+duration:0} and never
+updated. Seek slider
+will always show
+0:00/0:00.
+Bug Mobile
+apps/mobile/src/screens
+/FullScreenPlayerScree
+n.tsx
+Full-screen player UI.
+Consumes progress
+from PlayerProvider
+which is always {0,0}
+due to the useProgress
+bug. Seek slider is
+permanently broken.
+Bug Mobile
+Built with Spine AI on 2026-06-23 3
+apps/mobile/src/screens
+/HomeScreen.tsx
+Fetches real API data
+for tracks. DAO
+proposals are
+MOCK_PROPOSALS
+hardcoded — no real
+governance integration.
+Partial Mobile
+apps/mobile/src/screens
+/SearchScreen.tsx
+Live search with
+category filter and
+400ms debounce. Fully
+integrated with API.
+Real Mobile
+apps/mobile/src/screens
+/LibraryScreen.tsx
+MOCK_LIBRARY
+hardcoded. No API
+integration whatsoever.
+Displays fake data.
+Partial Mobile
+apps/mobile/src/screens
+/ProfileScreen.tsx
+Hardcoded 'Aurora Veil'
+profile with mock stats
+(24 tracks, 12K plays,
+$840 earned). No real
+user data.
+Partial Mobile
+apps/mobile/src/screens
+/StudioScreen.tsx
+MOCK_TRACKS
+hardcoded. Chart uses
+hardcoded chartData.
+NFT listing button is
+non-functional.
+Partial Mobile
+apps/mobile/src/services
+/api.ts
+Full API client:
+fetchTracks,
+searchTracks,
+registerTrack,
+fetchRecommendations,
+createOnboardingLink,
+createPurchase,
+healthCheck. Fully
+implemented.
+Real Mobile
+apps/mobile/src/theme/T
+heme.ts
+Complete design
+system: colors, fonts,
+spacing, radius,
+animations. Fully
+implemented.
+Real Mobile
+Built with Spine AI on 2026-06-23 4
+apps/mobile/src/utils/au
+dio-player.ts
+playHlsStream
+hardcodes URL to
+https://cdn.harmony.fm/t
+racks/${trackId}/master.
+m3u8 — completely
+ignores fileUrlHls
+returned by the API.
+Playback will fail unless
+CDN is configured
+exactly as
+cdn.harmony.fm.
+Bug Streaming / Mobile
+packages/blockchain/nft
+-mint.ts
+Metaplex Core
+createV1. 10% royalty
+split: 75% artist / 25%
+treasury. Fully
+implemented.
+Real Blockchain
+packages/blockchain/iry
+s-upload.ts
+Irys/Arweave metadata
+upload. Returns
+gateway URL. Fully
+implemented.
+Real Blockchain
+packages/db-schema/sc
+hema.sql
+Full PostgreSQL
+schema: 7 tables +
+check_split_sum()
+trigger + indexes.
+RANGE-partitioned
+stream_events.
+REVOKE
+UPDATE/DELETE on
+royalty_ledger. Only 3
+monthly partitions
+(Jun–Aug 2026).
+Partial Royalty
+packages/discovery-alg
+orithm/als_recommende
+r.py
+ALS model training +
+recommendation via
+implicit library.
+Standalone Python —
+NOT connected to
+Node.js API.
+Real Discovery
+packages/discovery-alg
+orithm/audio_features.p
+y
+Essentia
+MFCC/BPM/key/dancea
+bility/energy extraction.
+Standalone Python —
+NOT connected to
+Node.js API.
+Real Discovery
+Built with Spine AI on 2026-06-23 5
+packages/payments/stri
+pe-connect.ts
+createArtistConnectAcc
+ount +
+processTrackPurchase
+with 15% platform fee.
+Fully implemented.
+Real Payments
+packages/royalty-worker
+/src/server.ts
+Stream attribution every
+5min + weekly payout
+trigger Mondays 02:00
+UTC. Fully
+implemented.
+Real Royalty
+packages/royalty-worker
+/weekly-payout.ts
+CRITICAL BUG: SQL
+query does NOT select
+rh.stripe_connect_accou
+nt_id.
+payout.stripe_connect_a
+ccount_id is always
+undefined. Every
+weekly payout transfer
+will fail silently with a
+Stripe error.
+Bug Royalty / Payments
+packages/stream-worker
+/ffmpeg-hls.md
+FFmpeg command for
+128k/256k/320k AAC
+HLS transcoding.
+Documentation only —
+no automation pipeline
+exists.
+Partial Streaming
+packages/stream-worker
+/r2-upload.ts
+S3Client presigned
+PUT URL for Cloudflare
+R2. Fully implemented.
+Real Streaming
+packages/stream-worker
+/stream-counter.ts
+Cloudflare Worker: 30s
+dedup via KV, queues
+stream events. Fully
+implemented but NOT
+deployable — no
+wrangler.toml exists.
+Partial Streaming
+1.2 Layer Summary
+Table 2 — Layer Summary: Files Present vs. Missing
+Built with Spine AI on 2026-06-23 6
+Layer Files Present Files Missing / Broken Overall Status
+Streaming Infrastructure r2-upload.ts,
+stream-counter.ts,
+ffmpeg-hls.md, tracks.ts
+wrangler.toml,
+transcode.ts,
+acoustid.ts,
+auto-partition function
+Partial
+Royalty Calculation
+Engine
+schema.sql, db.ts,
+royalty-worker/src/server
+.ts, weekly-payout.ts
+weekly-payout.ts SQL
+fix, auto-partition, test
+coverage
+Bug
+Blockchain nft-mint.ts,
+irys-upload.ts,
+HarmonyWalletProvider.
+tsx
+React Native wallet
+adapter, NFT
+marketplace routes,
+DAO routes
+Partial
+Payment Rails stripe-connect.ts,
+webhooks.ts,
+payments.ts
+Auth guards on
+payments.ts, KYC flow,
+4 of 6 transaction types
+Bug
+Discovery Algorithm als_recommender.py,
+audio_features.py,
+recommendations.ts
+FastAPI microservice
+bridge, A/B framework,
+nDCG evaluation, real
+wiring
+Partial
+Mobile Apps App.tsx,
+AppNavigator.tsx,
+SearchScreen.tsx,
+api.ts, Theme.ts
+3 stub screens, 4 bug
+fixes, IAP, EAS config,
+app.json
+Partial
+Label Licensing (none) DMCA endpoint, PRO
+license integration,
+MLC, AcoustID, ISRC
+validation
+Missing
+Web App (apps/web) (none — directory does
+not exist)
+Entire Next.js
+application — all 44
+routes
+Missing
+BLOCKER: The apps/web directory does NOT exist. The entire Next.js web application — all 44
+routes defined in the UI/UX Master Specification — is missing. The web frontend is the primary
+product surface. This is the single largest gap in the codebase.
+Section 2: Layer-by-Layer Gap Analysis
+Layer 1: Streaming Infrastructure
+Table 3 — Layer 1: Streaming Infrastructure Gap Analysis
+Built with Spine AI on 2026-06-23 7
+Feature Status Gap Description
+Cloudflare R2 bucket setup Complete R2 credentials in .env.example.
+r2-upload.ts implements S3Client
+presigned PUT URL correctly.
+R2 presigned upload URL Complete packages/stream-worker/r2-uploa
+d.ts — generateUploadUrl() with
+15-minute expiry and MIME
+enforcement.
+FFmpeg HLS transcoding
+(128k/256k/320k AAC)
+Partial packages/stream-worker/ffmpeghls.md documents the correct
+FFmpeg command but there is
+NO automation pipeline. No
+transcode.ts, no Lambda/VPS
+trigger, no object-create event
+handler.
+HLS manifest serving Partial No Cloudflare Worker for
+authenticated HLS segment
+delivery exists. stream-counter.ts
+handles counting but not serving.
+The blueprint requires a Worker
+that validates auth tokens before
+serving .m3u8 and .ts segments.
+Cloudflare Worker stream counter Partial packages/stream-worker/streamcounter.ts is fully implemented
+but NOT deployable. No
+wrangler.toml exists at
+packages/stream-worker/wrangle
+r.toml. The Worker cannot be
+deployed to Cloudflare without it.
+30-second dedup via KV Complete stream-counter.ts correctly
+implements dedupKey =
+stream:${listenerId}:${trackId}
+with 30-second window check.
+Stream event queue Complete stream-counter.ts pushes to
+env.STREAM_QUEUE. Queue
+consumer exists in
+royalty-worker/src/server.ts.
+Built with Spine AI on 2026-06-23 8
+AcoustID fingerprinting
+integration
+Missing fingerprint_id column exists in
+packages/db-schema/schema.sql
+and in the tracks table. No
+AcoustID integration code exists
+anywhere in the repo. The
+blueprint requires fpcalc
+fingerprint generation at upload
+time with AcoustID API lookup.
+Audio fingerprint_id storage Partial Column exists in schema. No
+code populates it. Always NULL.
+Partition auto-management for
+stream_events
+Bug Only 3 monthly partitions exist:
+stream_events_y2026m06,
+stream_events_y2026m07,
+stream_events_y2026m08. Any
+stream event after 2026-09-01
+will throw a PostgreSQL partition
+error. No auto-partition creation
+function exists.
+Layer 2: Royalty Calculation Engine
+Table 4 — Layer 2: Royalty Calculation Engine Gap Analysis
+Feature Status Gap Description
+PostgreSQL schema — all 7
+tables
+Complete packages/db-schema/schema.sql
+contains users, tracks,
+rights_holders, royalty_splits,
+stream_events, royalty_ledger,
+payout_batches with correct
+indexes and foreign keys.
+100% split constraint
+enforcement
+Complete check_split_sum() trigger is
+DEFERRABLE INITIALLY
+DEFERRED — correct. Enforces
+SUM(split_percentage) = 100 at
+COMMIT, not per-row.
+Stream attribution pipeline Complete packages/royalty-worker/src/serv
+er.ts runs attribution every 5
+minutes. Selects uncredited
+stream_events, calculates
+per-rights-holder share, inserts to
+royalty_ledger, marks
+royalty_credited = true.
+Built with Spine AI on 2026-06-23 9
+Royalty ledger append-only
+enforcement
+Complete REVOKE UPDATE, DELETE ON
+royalty_ledger FROM PUBLIC in
+schema.sql. Correct and
+sufficient.
+Weekly payout batch job Bug CRITICAL:
+packages/royalty-worker/weeklypayout.ts SQL query selects
+rh.id and SUM(rl.amount_cents)
+but does NOT select
+rh.stripe_connect_account_id.
+The destination:
+payout.stripe_connect_account_i
+d in the Stripe transfer call is
+always undefined. Every payout
+fails silently.
+Minimum payout threshold Partial payout_threshold_cents
+DEFAULT 100 ($1.00) in
+rights_holders table. Blueprint
+specifies $10 minimum for the
+payout request button in the UI.
+The schema uses $1.00 —
+inconsistency with UI/UX spec.
+Split logic SQL query Complete Correct pending balance query in
+packages/royalty-worker/weeklypayout.ts — uses NOT EXISTS
+subquery against
+payout_batches to avoid
+double-paying. Only the missing
+stripe_connect_account_id
+breaks it.
+payout_batches table Complete Table exists with correct
+columns: id, rights_holder_id,
+total_amount_cents,
+stripe_transfer_id, status
+(pending/processing/completed/fa
+iled), period_start, period_end,
+created_at, completed_at.
+rights_holders with Stripe
+account ID
+Complete stripe_connect_account_id
+VARCHAR(255) UNIQUE exists
+in rights_holders table. The bug
+is in the SQL query that fails to
+SELECT it.
+Built with Spine AI on 2026-06-23 10
+Test coverage for royalty
+calculations
+Missing package.json scripts: 'test': 'echo
+Error: no test specified'. Zero test
+coverage for any royalty
+calculation logic. Financial
+calculations with no tests are a
+liability.
+Layer 3: Blockchain
+Table 5 — Layer 3: Blockchain Gap Analysis
+Feature Status Gap Description
+Solana wallet connection Bug apps/mobile/src/providers/Harmo
+nyWalletProvider.tsx uses
+@solana/wallet-adapter-react-ui
+— a web library that depends on
+browser DOM APIs. This will
+crash in React Native. Requires
+a React Native-compatible
+Solana wallet solution (e.g.,
+Mobile Wallet Adapter protocol
+or Phantom deeplink).
+Metaplex Core pNFT minting Complete packages/blockchain/nft-mint.ts
+implements createV1 with
+Royalties plugin, 1000 basis
+points (10%), 75% artist / 25%
+treasury, ruleSet: 'Enforced'.
+Correct.
+Arweave/Irys metadata upload Complete packages/blockchain/irys-upload.t
+s uploads JSON metadata to
+Arweave via Irys, returns
+gateway URL. Correct.
+Lazy minting Missing Blueprint specifies lazy minting:
+metadata uploaded to Arweave
+pre-mint, on-chain mint triggered
+only when purchase is
+confirmed. No pending_mint
+table in schema. No lazy mint
+flow in API routes.
+Built with Spine AI on 2026-06-23 11
+DAO governance (Snapshot) Missing apps/mobile/src/screens/HomeSc
+reen.tsx has
+MOCK_PROPOSALS
+hardcoded. No Snapshot.org
+integration. No DAO proposals
+API route. No dao_proposals or
+dao_votes tables in schema.
+NFT marketplace smart contract Missing No marketplace routes in
+apps/api/src/routes/. No
+nft_listings table in schema. No
+buy/sell/transfer flow.
+Secondary sale royalty
+enforcement
+Complete nft-mint.ts uses ruleSet:
+'Enforced' in Metaplex Core
+plugin — enforces royalties at
+protocol level on every transfer.
+Correct.
+Wallet adapter for React Native Bug HarmonyWalletProvider.tsx
+imports WalletModalProvider
+from
+@solana/wallet-adapter-react-ui
+which is incompatible with React
+Native. Must be replaced with
+Mobile Wallet Adapter or
+Phantom deeplink protocol.
+IPFS/Pinata redundancy Missing Blueprint specifies IPFS via
+Pinata as secondary redundancy
+for metadata. No Pinata
+integration exists.
+Layer 4: Payment Rails
+Table 6 — Layer 4: Payment Rails Gap Analysis
+Feature Status Gap Description
+Stripe Connect Express
+onboarding
+Complete packages/payments/stripe-conne
+ct.ts implements
+createArtistConnectAccount
+correctly. Returns onboarding
+link URL.
+Built with Spine AI on 2026-06-23 12
+Destination charge with split Complete processTrackPurchase in
+stripe-connect.ts uses
+transfer_data.destination +
+application_fee_amount (15%).
+Correct.
+Auth guard on payment endpoints Bug CRITICAL:
+apps/api/src/routes/payments.ts
+— both POST
+/api/payments/onboard and
+POST /api/payments/purchase
+have NO preHandler:
+[requireAuth]. Any
+unauthenticated caller can
+trigger Stripe Connect
+onboarding or purchase flows.
+Open to abuse.
+Streaming royalty transaction
+type
+Complete royalty_ledger.ledger_type
+includes 'stream_credit'.
+Attribution pipeline handles this.
+NFT sale transaction type Partial ledger_type includes 'nft_sale' in
+schema CHECK constraint. No
+API route or code path actually
+creates nft_sale ledger entries.
+Subscription transaction type Missing No subscription checkout
+endpoint. No $9.99/month or
+$19.99/month Stripe Checkout
+session. No subscription_tiers
+table.
+Tip transaction type Missing ledger_type includes 'tip' in
+schema. No tipping endpoint or
+UI flow.
+Merchandise transaction type Missing Not implemented. Not in schema.
+Sync license transaction type Missing Not implemented. Phase 3
+feature per blueprint.
+Stripe webhook handler Complete apps/api/src/routes/webhooks.ts
+handles
+payment_intent.succeeded,
+transfer.created, transfer.failed.
+Correct.
+Built with Spine AI on 2026-06-23 13
+Payout request endpoint Missing No
+apps/api/src/routes/payouts.ts.
+Artists cannot manually request
+payouts. Only the automated
+weekly batch exists.
+KYC flow Missing kyc_status column exists in
+users table (DEFAULT 'pending').
+No KYC integration code. No
+KYC provider configured. All
+users are permanently 'pending'.
+Apple IAP integration Missing No IAP code in mobile app.
+Blueprint requires StoreKit 2 for
+subscriptions on iOS.
+Google Play Billing Missing No Google Play Billing
+integration. Required for Android
+subscriptions.
+Layer 5: Discovery Algorithm
+Table 7 — Layer 5: Discovery Algorithm Gap Analysis
+Feature Status Gap Description
+ALS collaborative filtering model Complete packages/discovery-algorithm/als
+_recommender.py implements
+train_als_model() and
+get_recommendations() using
+the implicit library. Correct
+algorithm, correct interaction
+weights (play=1.0, replay=2.0,
+like=3.0, share=5.0, skip=-1.0).
+Essentia audio feature extraction Complete packages/discovery-algorithm/au
+dio_features.py extracts BPM,
+key, danceability, energy, MFCC
+via Essentia. Correct
+implementation.
+Built with Spine AI on 2026-06-23 14
+Python microservice bridge to
+Node.js API
+Missing Both Python files are standalone
+scripts. No FastAPI or Flask
+server wraps them. No HTTP
+endpoint exists.
+apps/api/src/routes/recommendat
+ions.ts cannot call them. This is
+the critical gap that makes the
+entire discovery layer
+non-functional.
+recommendations.ts wired to ALS Partial apps/api/src/routes/recommendat
+ions.ts returns recent tracks for
+all users. Contains TODO
+comment to wire Python ALS.
+Not a real recommendation
+engine.
+Synthetic dataset bootstrap
+(Last.fm)
+Missing No Last.fm dataset download
+script. No preprocessing
+pipeline. ALS model has never
+been trained on any data.
+A/B testing framework Missing Blueprint specifies hash(user_id)
+% 2 deterministic assignment,
+user_experiments table, 50/50
+algorithm vs editorial split. None
+of this exists.
+nDCG@10 evaluation Missing No evaluation metric calculation.
+No monitoring dashboard for
+algorithm quality.
+Cold start solution (discovery
+boost)
+Missing Blueprint specifies new tracks
+get a 'discovery boost' — shown
+to 500 random users in matching
+genre for 72 hours. No
+implementation.
+pgvector for audio similarity Missing Blueprint specifies storing audio
+feature vectors in PostgreSQL
+pgvector column for cosine
+similarity search. No pgvector
+extension in schema. No vector
+column on tracks table.
+Social graph (Phase 3) Missing Phase 3 feature. No follows table
+in schema. Expected gap at this
+stage.
+Layer 6: Mobile Apps
+Table 8 — Layer 6: Mobile Apps Gap Analysis
+Built with Spine AI on 2026-06-23 15
+Feature Status Gap Description
+React Native + Expo SDK 50 Complete App.tsx confirms Expo SDK 50.
+ClerkProvider + WalletProvider +
+PlayerProvider +
+NavigationContainer correctly
+structured.
+react-native-track-player
+integration
+Partial PlayerProvider.tsx imports
+TrackPlayer and useProgress but
+useProgress is never called.
+Player state is initialized but
+never updated from TrackPlayer
+events.
+HLS streaming on mobile Bug apps/mobile/src/utils/audio-player
+.ts hardcodes url:
+https://cdn.harmony.fm/tracks/${tr
+ackId}/master.m3u8 — ignores
+fileUrlHls from API response.
+Playback will fail unless CDN is
+configured exactly as
+cdn.harmony.fm.
+Background audio (iOS +
+Android)
+Partial react-native-track-player
+supports background audio
+natively. No app.json exists to
+configure UIBackgroundModes:
+['audio'] for iOS or
+FOREGROUND_SERVICE
+permission for Android.
+Lock screen controls Partial AppKilledPlaybackBehavior and
+Capability constants are
+imported in audio-player.ts. No
+app.json to configure the plugin.
+Lock screen controls will not
+appear without proper app.json
+configuration.
+Progress tracking / seek slider Bug PlayerProvider.tsx imports
+useProgress but never calls it.
+progress state is always
+{position: 0, duration: 0}.
+FullScreenPlayerScreen.tsx
+consumes this broken state.
+Seek slider permanently shows
+0:00/0:00.
+Built with Spine AI on 2026-06-23 16
+IAP (in-app purchases) Missing No expo-in-app-purchases or
+react-native-purchases
+integration. No $9.99/month or
+$19.99/month subscription
+products configured. Required
+for App Store compliance.
+EAS Build configuration Missing No apps/mobile/app.json. No
+apps/mobile/eas.json. The app
+cannot be built for iOS or
+Android without these files.
+HomeScreen — real data Partial Fetches real track data from API.
+DAO proposals are
+MOCK_PROPOSALS hardcoded.
+SearchScreen — real data Complete Live search with 400ms
+debounce and category filter.
+Fully integrated with API.
+LibraryScreen — real data Partial MOCK_LIBRARY hardcoded. No
+API call. Displays fake data.
+ProfileScreen — real data Partial Hardcoded 'Aurora Veil' profile.
+No API call. Mock stats.
+StudioScreen — real data Partial MOCK_TRACKS + hardcoded
+chartData. NFT listing button
+non-functional.
+FullScreenPlayerScreen Bug Progress always 0 due to
+PlayerProvider bug. Otherwise
+UI is implemented.
+Wallet adapter for React Native Bug HarmonyWalletProvider.tsx uses
+@solana/wallet-adapter-react-ui
+(web library). Will crash in React
+Native.
+Layer 7: Label Licensing
+Table 9 — Layer 7: Label Licensing Gap Analysis
+Built with Spine AI on 2026-06-23 17
+Feature Status Gap Description
+DMCA safe harbor agent
+designation
+Missing No DMCA agent registered with
+Copyright Office. No takedown
+endpoint. No
+notice-and-takedown workflow.
+No counter-notification process.
+No repeat infringer policy. This is
+a legal requirement before public
+launch.
+Notice-and-takedown workflow Missing No apps/api/src/routes/dmca.ts.
+No designated email handler. No
+24-hour response SLA
+implementation.
+PRO licenses
+(ASCAP/BMI/SESAC/GMR)
+Missing No PRO license applications
+submitted. No integration.
+Required before any public
+performance of registered works.
+Mechanical licensing (MLC) Missing No MLC registration. No Section
+115 compulsory license.
+Required for interactive
+streaming in the US.
+AcoustID fingerprinting for
+content ID
+Missing fingerprint_id column exists in
+tracks table. No fpcalc
+integration. No AcoustID API
+calls. No duplicate detection. No
+DMCA hold workflow.
+DistroKid/TuneCore integration Missing Blueprint specifies one-click
+catalog import from DistroKid.
+No OAuth flow. No import API.
+No catalog migration tool of any
+kind.
+ISRC code validation Missing isrc_code VARCHAR(15)
+UNIQUE column exists in tracks
+table. No validation logic. No
+ISRC lookup service integration.
+SoundCloud import Missing Blueprint specifies SoundCloud
+OAuth rightarrow fetch track list
+rightarrow batch upload. No
+implementation.
+Bandcamp import Missing Blueprint specifies Bandcamp
+page scrape rightarrow import
+metadata. No implementation.
+Built with Spine AI on 2026-06-23 18
+Section 3: UI/UX Gap Analysis
+3.1 Web App Pages (Next.js — apps/web)
+BLOCKER: The apps/web directory does NOT exist. The entire Next.js web application is missing.
+Every web route below is Missing. This is the primary product surface per the UI/UX Master
+Specification.
+Table 10 — Web App Pages: All 44 Routes Missing (apps/web does not exist)
+Page / Component Route Status Notes
+Landing Page / Missing Animated gradient
+mesh hero, feature trio,
+pricing table,
+testimonials. SSG
+rendered.
+Login /login Missing Clerk-backed. Google +
+Apple OAuth +
+email/password.
+Max-width 400px
+centered card.
+Signup /signup Missing Display name, email,
+password, confirm
+password, terms
+checkbox. Password
+strength indicator.
+Onboarding /onboarding Missing 5-step flow: intent
+rightarrow genres
+rightarrow follow artists
+rightarrow artist profile
+rightarrow Stripe
+Connect setup. Public Artist Profile /artist/[slug] Missing Header banner, popular
+tracks, discography
+tabs, about, fan
+subscriptions, NFTs,
+similar artists.
+Public Track Page /track/[id] Missing Cover art, credits
+accordion, splits
+accordion, NFT status,
+comments.
+Built with Spine AI on 2026-06-23 19
+Home / Discovery Feed /home Missing 9 horizontal scroll rows
+with skeleton loading
+and staggered 100ms
+reveal. 9 API endpoints.
+Search (default) /search Missing Recent searches, genre
+browse grid, trending
+searches. 300ms
+debounce.
+Search Results /search/[query] Missing Tabbed results: All /
+Tracks / Artists / Albums
+/ Playlists / NFTs.
+Genre Browse /genre/[slug] Missing Genre hero with
+gradient, tabs: Top
+Tracks / New Releases
+/ Artists / Playlists.
+Library Hub /library Missing Sub-nav tabs: Playlists /
+Liked Tracks / History /
+Following Feed.
+Liked Tracks /library/liked Missing Sort/filter bar,
+TrackCard list, Play All
++ shuffle.
+Recently Played /library/history Missing Date group headers,
+Clear History button
+with confirm dialog.
+Following Feed /library/following Missing Filter: All / Tracks /
+Albums / EPs. Mixed
+TrackCard + AlbumCard
+feed.
+Playlist Page /playlist/[id] Missing Hero, numbered
+TrackCard list with drag
+handles (owner only).
+Create Playlist /playlist/new Missing Name, description,
+cover art upload,
+privacy toggle.
+Track Detail (auth) /track/[id] Missing Two-column: left (art,
+credits, splits, NFT
+status, comments), right
+(related tracks).
+Album/EP Page /album/[id] Missing Two-column hero,
+numbered track list,
+More from artist section.
+Built with Spine AI on 2026-06-23 20
+Artist Profile (auth) /artist/[slug] Missing Same as public +
+follow/message/subscrib
+e actions.
+Queue /queue Missing Now Playing (large) +
+Up Next (draggable
+list). Save as Playlist
+button.
+Notifications /notifications Missing Filter tabs: All / Follows
+/ Streams / NFTs /
+Payouts / DAO. Mark all
+read.
+Messages Inbox /messages Missing Two-panel desktop:
+thread list (320px) +
+active thread.
+WebSocket real-time.
+Message Thread /messages/[threadId] Missing Message bubbles, track
+sharing, real-time via
+WebSocket.
+NFT Marketplace /marketplace Missing Filter sidebar (240px),
+NFT grid (4-col
+desktop), sort bar.
+NFT Detail /marketplace/[nftId] Missing Two-column: art +
+player + ownership
+history / purchase panel.
+Owned NFTs /collectibles Missing Grid of owned
+NFTCards with Owned
+variant.
+DAO Feed /dao Missing Filter tabs: Active /
+Passed / Failed / All.
+ProposalCard list.
+DAO Proposal Detail /dao/[proposalId] Missing Full proposal text +
+voting panel
+(For/Against/Abstain
+tally bars).
+Fan Subscriptions /subscriptions Missing My Subscriptions +
+Discover sections.
+Artist Dashboard /studio Missing 4 KPI stat cards,
+streams line chart,
+earnings donut chart,
+recent activity, quick
+actions.
+Built with Spine AI on 2026-06-23 21
+Upload Track /studio/upload Missing 3-step: audio upload
+rightarrow metadata
+rightarrow rights &
+splits. WaveSurfer.js
+waveform preview.
+Manage Catalog /studio/catalog Missing Desktop table: cover /
+title / streams / earnings
+/ status badge / NFT
+indicator.
+Edit Track /studio/catalog/[trackId] Missing Pre-populated upload
+form Steps 2+3. Danger
+zone: Take Down /
+Delete.
+Earnings Overview /studio/earnings Missing 3 EarningsWidget
+cards, donut chart,
+payout history table,
+Request Payout button.
+Royalty Ledger /studio/earnings/ledger Missing Append-only display
+table. Filter by
+date/track/event type.
+CSV export. NO editing.
+Audience Analytics /studio/analytics Missing World map heatmap,
+streams by time of day,
+listener growth, top
+sources, per-track table.
+Per-Track Analytics /studio/analytics/[trackId] Missing Same charts scoped to
+one track + listener
+retention curve.
+NFT Collection Manager /studio/nfts Missing Stats row, NFTCard
+grid with
+Edit/View/Delist actions.
+NFT Mint Flow /studio/nfts/mint/[trackId] Missing 3-step: edition setup
+rightarrow pricing +
+benefits rightarrow
+publish with wallet
+connect.
+Fan Subscription
+Management
+/studio/fans Missing MRR + subscriber
+count, up to 3
+SubscriptionTierCards,
+subscriber table.
+Create/Edit Tiers /studio/fans/tiers Missing Tier name, monthly
+price, benefits list,
+description.
+Built with Spine AI on 2026-06-23 22
+Create DAO Proposal /studio/dao/create Missing Rich text editor, voting
+duration, category. Live
+preview panel on
+desktop.
+Settings Hub /account Missing Left sub-nav (200px) +
+content area. 7
+sub-pages.
+Edit Profile /account/profile Missing Avatar upload, header
+image, display name,
+bio, social links.
+App Preferences /account/preferences Missing Audio quality, autoplay,
+explicit content,
+notification toggles,
+language.
+Harmony Premium /account/subscription Missing Current plan card,
+upgrade/downgrade
+comparison, billing
+history, cancel flow.
+Wallet Connection /account/wallet Missing Connected wallet card,
+Connect Wallet button,
+Disconnect. MetaMask
++ WalletConnect +
+Coinbase.
+Payout Setup /account/payouts Missing Stripe Connect status,
+Connect Stripe Account
+button rightarrow OAuth
+flow.
+Security /account/security Missing Change password, 2FA
+TOTP setup (QR +
+backup codes), active
+sessions list.
+3.2 Mobile App Screens
+Table 11 — Mobile App Screens Status
+Built with Spine AI on 2026-06-23 23
+Screen File Status Notes
+HomeScreen apps/mobile/src/screens
+/HomeScreen.tsx
+Partial Real API data for
+tracks.
+MOCK_PROPOSALS
+hardcoded for DAO
+section. Missing:
+continue listening row,
+new releases row,
+genre explore row, NFT
+marketplace row.
+SearchScreen apps/mobile/src/screens
+/SearchScreen.tsx
+Complete Live search with 400ms
+debounce and category
+filter. Fully integrated
+with API. Matches spec.
+LibraryScreen apps/mobile/src/screens
+/LibraryScreen.tsx
+Partial MOCK_LIBRARY
+hardcoded. No API
+integration. Missing:
+Playlists / Liked /
+History / Following tabs.
+No real data.
+ProfileScreen apps/mobile/src/screens
+/ProfileScreen.tsx
+Partial Hardcoded 'Aurora Veil'
+profile. Mock stats (24
+tracks, 12K plays, $840
+earned). No real user
+data from API.
+StudioScreen apps/mobile/src/screens
+/StudioScreen.tsx
+Partial MOCK_TRACKS +
+hardcoded chartData.
+NFT listing button
+non-functional. No real
+artist analytics.
+FullScreenPlayerScreen apps/mobile/src/screens
+/FullScreenPlayerScree
+n.tsx
+Bug UI is implemented.
+Progress always {0,0}
+due to PlayerProvider
+useProgress bug. Seek
+slider permanently
+broken.
+MiniPlayer apps/mobile/src/navigati
+on/AppNavigator.tsx
+Complete Rendered in
+AppNavigator.
+Persistent above tab
+bar. Correct structure.
+Built with Spine AI on 2026-06-23 24
+AppNavigator apps/mobile/src/navigati
+on/AppNavigator.tsx
+Complete 5 tabs + Stack with
+Player modal +
+MiniPlayer. Correct
+navigation structure.
+3.3 Component Library Status
+Table 12 — Component Library Status (16 Components from UI/UX Spec)
+Component Status Notes
+TrackCard (Horizontal / Vertical /
+Compact)
+Missing No shared component library.
+TrackCard is rendered inline in
+each screen. No reusable
+component with the 3 variants
+and all props from UI/UX spec
+Section 5.1.
+ArtistCard (Standard / Compact /
+Featured)
+Missing No reusable ArtistCard
+component. Not extracted from
+any screen.
+NFTCard (Marketplace / Owned
+/ Mini)
+Missing No NFTCard component. NFT UI
+is non-functional in StudioScreen.
+AlbumCard Missing No AlbumCard component.
+MiniPlayer Partial Exists inline in AppNavigator.tsx.
+Not extracted as a standalone
+reusable component. Missing
+progress bar update due to
+PlayerProvider bug.
+FullScreenPlayer Bug Exists as
+FullScreenPlayerScreen.tsx.
+Seek slider broken due to
+PlayerProvider useProgress bug.
+EarningsWidget Missing No EarningsWidget component.
+StudioScreen uses hardcoded
+mock data.
+ProposalCard Missing No ProposalCard component.
+HomeScreen uses
+MOCK_PROPOSALS with no
+real card component.
+Built with Spine AI on 2026-06-23 25
+SubscriptionTierCard (Artist /
+Listener)
+Missing No SubscriptionTierCard
+component. No subscription tier
+system.
+MessageThread (list item) Missing No messaging system. No
+MessageThread component.
+MessageBubble (Sent /
+Received / Track share)
+Missing No messaging system. No
+MessageBubble component.
+NotificationItem Missing No notification system. No
+NotificationItem component.
+GenreCard Missing No GenreCard component.
+SearchResultCard Missing SearchScreen renders results
+inline without a reusable
+SearchResultCard.
+EmptyState Missing No shared EmptyState
+component. Each screen
+handles empty states ad hoc (or
+not at all).
+SkeletonLoader Missing No skeleton loading
+components. No shimmer
+animations. Screens show blank
+state while loading.
+Section 4: Database Schema Audit
+4.1 Tables Present vs. Required
+Table 13 — Database Tables: Present vs. Required
+Table Status Notes
+users Present id (UUID), clerk_id (UNIQUE),
+email, display_name, avatar_url,
+is_artist, kyc_status (DEFAULT
+'pending'), created_at. Correct
+structure.
+tracks Present id, artist_id (FK users), title,
+genre, file_url_r2, file_url_hls,
+cover_art_url, duration_seconds,
+isrc, fingerprint_id, explicit,
+release_date, stream_count,
+created_at. Matches blueprint.
+Built with Spine AI on 2026-06-23 26
+rights_holders Present id, track_id (FK), user_id (FK),
+role, stripe_connect_account_id
+(VARCHAR 255 UNIQUE),
+created_at. Note: blueprint
+Technical doc shows
+rights_holders as a separate
+entity from users; schema
+correctly separates them.
+royalty_splits Present id, track_id (FK), rights_holder_id
+(FK), split_percentage
+(NUMERIC 5,2), created_at.
+check_split_sum() trigger
+DEFERRABLE INITIALLY
+DEFERRED. Correct.
+stream_events Partial RANGE-partitioned by
+created_at. Only 3 partitions:
+Jun/Jul/Aug 2026. Fails after
+2026-09-01. No auto-partition
+function.
+royalty_ledger Present id, rights_holder_id (FK), track_id
+(FK), stream_event_id (FK),
+amount_cents (INTEGER —
+never float), ledger_type
+(CHECK constraint), created_at.
+REVOKE UPDATE/DELETE.
+Append-only. Correct.
+payout_batches Present id, rights_holder_id (FK),
+total_amount_cents,
+stripe_transfer_id (UNIQUE),
+status (CHECK:
+pending/processing/completed/fai
+led), period_start, period_end,
+created_at, completed_at.
+Correct.
+albums Missing Required for album/EP pages,
+discography tabs, album cards.
+No albums table.
+playlists Missing Required for playlist pages,
+library hub, queue save. No
+playlists table.
+playlist_tracks Missing Junction table for playlist-track
+relationships. Missing.
+Built with Spine AI on 2026-06-23 27
+follows Missing Required for following feed, artist
+follower counts, social graph. No
+follows table.
+likes Missing Required for liked tracks library,
+like counts on tracks. No likes
+table.
+comments Missing Required for track detail page
+comments section. No
+comments table.
+messages Missing Required for DM system. No
+messages table.
+message_threads Missing Required for DM thread list. No
+message_threads table.
+notifications Missing Required for notification center.
+No notifications table.
+subscription_tiers Missing Required for fan subscription
+system. No subscription_tiers
+table.
+fan_subscriptions Missing Junction table for fan-artist
+subscription relationships.
+Missing.
+nft_listings Missing Required for NFT marketplace.
+No nft_listings table.
+dao_proposals Missing Required for DAO governance.
+No dao_proposals table.
+dao_votes Missing Required for DAO voting. No
+dao_votes table.
+user_preferences Missing Required for audio quality,
+autoplay, notification settings. No
+user_preferences table.
+play_history Missing Required for recently played,
+continue listening,
+recommendation training. No
+play_history table.
+pending_mints Missing Required for lazy minting flow.
+No pending_mints table.
+4.2 Constraint Enforcement Assessment
+Table 14 — Database Constraint Enforcement Assessment
+Built with Spine AI on 2026-06-23 28
+Constraint Status Assessment
+100% split constraint
+(check_split_sum)
+Correct DEFERRABLE INITIALLY
+DEFERRED is the correct
+approach. Allows multi-row
+inserts within a transaction
+before validating the sum at
+COMMIT. Prevents false
+positives during batch inserts.
+Append-only ledger (REVOKE
+UPDATE/DELETE)
+Correct REVOKE UPDATE, DELETE ON
+royalty_ledger FROM PUBLIC
+prevents any application-level
+modification. Even a
+compromised app server cannot
+alter historical financial data.
+Correct and sufficient.
+Partition coverage
+(stream_events)
+Bug Only stream_events_y2026m06,
+stream_events_y2026m07,
+stream_events_y2026m08 exist.
+PostgreSQL will throw 'no
+partition of relation
+stream_events found for row' for
+any event after 2026-09-01.
+Production will break on
+September 1, 2026.
+Auto-partition creation Missing No pg_cron job or trigger
+function to automatically create
+new monthly partitions. Must be
+added before launch.
+stripe_connect_account_id
+uniqueness
+Correct VARCHAR(255) UNIQUE on
+rights_holders. Prevents
+duplicate Stripe accounts per
+rights holder.
+isrc_code uniqueness Correct VARCHAR(15) UNIQUE on
+tracks. Prevents duplicate ISRC
+registrations.
+fingerprint_id uniqueness Correct TEXT UNIQUE on tracks.
+Prevents duplicate audio uploads
+once fingerprinting is
+implemented.
+Section 5: Infrastructure Configuration Audit
+Built with Spine AI on 2026-06-23 29
+5.1 Environment Variables Audit
+Table 15 — Environment Variables: Present vs. Required
+Variable Present in
+.env.example
+Required By Notes
+DATABASE_URL Yes API, Royalty Worker Points to localhost.
+Needs production host
+before deployment.
+PORT Yes API
+(apps/api/src/index.ts)
+Default 4000. Correct.
+LOG_LEVEL Yes API Default 'info'. Correct.
+CLERK_SECRET_KEY Yes apps/api/src/auth.ts sk_test_ prefix. Needs
+production key.
+EXPO_PUBLIC_CLERK
+_PUBLISHABLE_KEY
+Yes apps/mobile/App.tsx pk_test_ prefix. Needs
+production key.
+STRIPE_SECRET_KEY Yes packages/payments/stri
+pe-connect.ts,
+packages/royalty-worker
+/weekly-payout.ts
+sk_test_ prefix. Needs
+production key.
+STRIPE_WEBHOOK_S
+ECRET
+Yes apps/api/src/routes/web
+hooks.ts
+whsec_ prefix. Correct.
+CLOUDFLARE_ACCOU
+NT_ID
+Yes packages/stream-worker
+/r2-upload.ts
+Required for R2
+endpoint construction.
+R2_ACCESS_KEY_ID Yes packages/stream-worker
+/r2-upload.ts
+R2 API token access
+key.
+R2_SECRET_ACCESS
+_KEY
+Yes packages/stream-worker
+/r2-upload.ts
+R2 API token secret.
+R2_BUCKET_NAME Yes packages/stream-worker
+/r2-upload.ts
+Default 'harmony-audio'.
+SOLANA_RPC_URL Yes packages/blockchain/nft
+-mint.ts
+Points to devnet. Needs
+mainnet for production.
+EXPO_PUBLIC_SOLAN
+A_RPC
+Yes apps/mobile/src/provider
+s/HarmonyWalletProvid
+er.tsx
+Points to devnet. Needs
+mainnet for production.
+HARMONY_TREASUR
+Y_WALLET
+Yes packages/blockchain/nft
+-mint.ts
+Treasury wallet for 25%
+NFT royalty share.
+Built with Spine AI on 2026-06-23 30
+IRYS_NODE_URL Yes packages/blockchain/iry
+s-upload.ts
+Points to
+devnet.irys.xyz. Needs
+node1.irys.xyz for
+production.
+EXPO_PUBLIC_API_U
+RL
+Yes apps/mobile/src/services
+/api.ts
+Points to
+localhost:4000. Needs
+production URL.
+CLOUDFLARE_WORK
+ER_URL
+Missing stream-counter.ts
+(deployed Worker
+endpoint)
+Mobile app needs this
+to send stream events
+to the Cloudflare
+Worker.
+CLOUDFLARE_KV_NA
+MESPACE_ID
+Missing wrangler.toml (stream
+dedup KV binding)
+Required for Worker KV
+binding in wrangler.toml.
+ACOUSTID_API_KEY Missing AcoustID fingerprinting
+(not yet implemented)
+Required when
+acoustid.ts is built.
+REDIS_URL Missing Rate limiting
+middleware (not yet
+implemented)
+Required for rate
+limiting and caching
+layer.
+SENTRY_DSN Missing Error monitoring (not
+yet implemented)
+Required for Sentry
+integration in API and
+web app.
+NEXT_PUBLIC_API_U
+RL
+Missing apps/web (does not
+exist yet)
+Required for Next.js
+web app API calls.
+NEXT_PUBLIC_CLERK
+_PUBLISHABLE_KEY
+Missing apps/web (does not
+exist yet)
+Required for
+@clerk/nextjs in web
+app.
+STRIPE_CONNECT_CL
+IENT_ID
+Missing Stripe Connect OAuth
+flow
+Required for Stripe
+Connect Express
+onboarding OAuth
+redirect.
+MLC_API_KEY Missing MLC mechanical
+licensing (not yet
+implemented)
+Required when MLC
+integration is built.
+PYTHON_RECOMMEN
+DER_URL
+Missing apps/api/src/routes/reco
+mmendations.ts (once
+wired)
+URL of the FastAPI
+microservice for ALS
+recommendations.
+EAS_PROJECT_ID Missing apps/mobile/eas.json
+(does not exist)
+Required for Expo
+Application Services
+builds.
+5.2 Infrastructure Stack Assessment
+Table 16 — Infrastructure Stack Assessment
+Built with Spine AI on 2026-06-23 31
+Component Configured Notes
+Cloudflare R2 Yes R2 credentials present in
+.env.example. r2-upload.ts
+correctly uses S3-compatible API.
+Cloudflare Workers Partial stream-counter.ts is
+implemented but NOT
+deployable. No wrangler.toml at
+packages/stream-worker/wrangle
+r.toml. Worker cannot be
+deployed without it.
+PostgreSQL Yes DATABASE_URL present.
+Schema fully defined. Needs
+production host.
+Clerk Auth Yes Both CLERK_SECRET_KEY
+and
+EXPO_PUBLIC_CLERK_PUBLIS
+HABLE_KEY present. auth.ts
+correctly implements requireAuth
+hook.
+Stripe Connect Partial STRIPE_SECRET_KEY present.
+STRIPE_CONNECT_CLIENT_ID
+missing. OAuth onboarding flow
+will fail without it.
+Solana / Metaplex Yes SOLANA_RPC_URL +
+HARMONY_TREASURY_WALL
+ET present. Currently pointing to
+devnet.
+Irys / Arweave Yes IRYS_NODE_URL present.
+Currently pointing to
+devnet.irys.xyz.
+Redis Missing No REDIS_URL. No rate limiting.
+No caching layer. Required for
+production API stability.
+CDN (cdn.harmony.fm) Missing audio-player.ts hardcodes
+cdn.harmony.fm but no CDN is
+configured. No CNAME record.
+No Cloudflare custom domain for
+R2.
+Error Monitoring (Sentry) Missing No SENTRY_DSN. No Sentry
+integration in API or mobile app.
+No error tracking.
+Built with Spine AI on 2026-06-23 32
+CI/CD Missing No .github/workflows/ directory.
+No GitHub Actions. No
+automated testing or deployment
+pipeline.
+Docker / Deployment Missing No Dockerfile. No
+docker-compose.yml. No
+deployment configuration of any
+kind.
+wrangler.toml Missing Required at
+packages/stream-worker/wrangle
+r.toml to deploy the Cloudflare
+Worker.
+EAS Config (app.json / eas.json) Missing No apps/mobile/app.json. No
+apps/mobile/eas.json. Mobile
+app cannot be built for App Store
+or Play Store.
+Per-package package.json files Missing npm workspaces declared in root
+package.json but no individual
+package.json files exist in any
+workspace. Dependency
+resolution is broken.
+Input Validation (Zod/Joi) Missing No Zod or Joi in any API route.
+Manual checks only. Injection
+risk.
+Rate Limiting Missing No rate limiting middleware on
+any API endpoint.
+Section 6: Prioritized Delivery Roadmap
+ROADMAP PHILOSOPHY: Fix critical bugs first — they block everything. Build the web app
+second — it is the primary product surface. Then layer in advanced features. Each sprint has a
+clear definition of done.
+Sprint 0: Critical Bug Fixes (Week 0 — Do Before Anything Else)
+Table 17 — Sprint 0: Critical Bug Fixes
+Built with Spine AI on 2026-06-23 33
+# Item File(s) Definition of
+Done
+Size Depends On
+0.1 Fix
+weekly-payout.
+ts SQL — add
+stripe_connect
+_account_id to
+SELECT
+packages/royal
+ty-worker/week
+ly-payout.ts
+SQL query
+selects
+rh.stripe_conne
+ct_account_id.
+Stripe transfer
+destination is
+no longer
+undefined.
+Test payout
+with a real
+Stripe test
+account.
+S Nothing
+0.2 Add auth
+guards to
+payments.ts
+— add
+preHandler:
+[requireAuth]
+to both routes
+apps/api/src/ro
+utes/payments.
+ts
+Both POST
+/api/payments/
+onboard and
+POST
+/api/payments/
+purchase
+return 401 for
+unauthenticate
+d requests.
+Verified with
+curl without
+auth token.
+S Nothing
+0.3 Fix index.ts
+import —
+change .ts to
+.js extension
+on tracks route
+import
+apps/api/src/in
+dex.ts
+import {
+trackRoutes }
+from
+'./routes/tracks.
+js' — .ts
+extension
+removed. API
+server starts
+without
+module
+resolution
+error.
+XS Nothing
+Built with Spine AI on 2026-06-23 34
+0.4 Fix
+audio-player.ts
+— use
+fileUrlHls from
+API instead of
+hardcoded
+URL
+apps/mobile/sr
+c/utils/audio-pl
+ayer.ts
+playHlsStream
+accepts
+fileUrlHls
+parameter and
+uses it as the
+url field.
+Hardcoded
+cdn.harmony.f
+m URL
+removed.
+Tracks play
+from
+API-provided
+URL.
+S Nothing
+0.5 Fix
+PlayerProvider.
+tsx — call
+useProgress()
+hook and
+update
+progress state
+apps/mobile/sr
+c/providers/Pla
+yerProvider.tsx
+useProgress()
+is called inside
+the provider
+component.
+progress state
+updates in
+real-time from
+TrackPlayer.
+FullScreenPlay
+erScreen seek
+slider shows
+correct
+position and
+duration.
+S Nothing
+0.6 Add
+stream_events
+partitions for
+Sep 2026
+onward +
+create
+auto-partition
+function
+packages/db-s
+chema/schema
+.sql
+Partitions exist
+for Sep 2026
+through Dec
+2027. pg_cron
+job or trigger
+function
+auto-creates
+partitions 30
+days before
+month start.
+Stream events
+after Sep 1
+2026 do not
+throw partition
+errors.
+M Nothing
+Built with Spine AI on 2026-06-23 35
+0.7 Remove
+spurious
+multichain-tradi
+ng-bot
+dependency
+from
+package.json
+package.json
+(root)
+multichain-tradi
+ng-bot: file:../..
+removed from
+dependencies.
+npm install
+completes
+without errors.
+XS Nothing
+Sprint 1: Foundation — Web App + Auth + Player (Weeks 1–4)
+Table 18 — Sprint 1: Foundation
+# Item File(s) Definition of
+Done
+Size Depends On
+1.1 Initialize
+Next.js 14 web
+app
+apps/web/
+(new directory)
+cd apps &&
+npx
+create-next-ap
+p@latest web
+--typescript
+--tailwind
+--eslint --app
+--src-dir
+--import-alias
+'@/*'. App runs
+at
+localhost:3000.
+S Sprint 0
+1.2 Set up design
+system CSS
+tokens
+apps/web/src/s
+tyles/globals.cs
+s
+All CSS
+custom
+properties
+from UI/UX
+Spec Section
+1 defined on
+:root. Inter font
+loaded with
+weights
+400/500/600/70
+0. Dark mode
+only. No light
+mode variants.
+M 1.1
+Built with Spine AI on 2026-06-23 36
+1.3 Build shared
+component
+library —
+TrackCard,
+ArtistCard,
+SkeletonLoade
+r, EmptyState
+apps/web/src/c
+omponents/
+TrackCard (3
+variants),
+ArtistCard (3
+variants),
+SkeletonLoade
+r (all variants),
+EmptyState
+with all props
+from UI/UX
+Spec Section
+5. Storybook
+or visual test.
+L 1.2
+1.4 Implement
+sidebar
+navigation
+(desktop)
+apps/web/src/c
+omponents/lay
+out/Sidebar.tsx
+240px fixed
+sidebar with all
+nav sections
+(DISCOVER/LI
+BRARY/STUDI
+O/COMMUNIT
+Y), active state
+with 3px left
+border, user
+section pinned
+to bottom.
+Matches
+UI/UX Spec
+Section 2.1.
+M 1.2
+1.5 Implement
+bottom player
+bar (desktop)
+apps/web/src/c
+omponents/pla
+yer/PlayerBar.t
+sx
+72px fixed bar
+with 3 zones
+(left/center/righ
+t). Progress
+bar scrubable.
+All controls
+functional.
+Glassmorphis
+m styling.
+L 1.2
+Built with Spine AI on 2026-06-23 37
+1.6 Implement
+auth pages —
+Login + Signup
+apps/web/src/a
+pp/login/page.t
+sx,
+apps/web/src/a
+pp/signup/page
+.tsx
+Clerk-backed
+login with
+Google +
+Apple OAuth +
+email/passwor
+d. Signup with
+password
+strength
+indicator.
+Redirect to
+/onboarding on
+success.
+M 1.1
+1.7 Implement
+5-step
+onboarding
+flow
+apps/web/src/a
+pp/onboarding/
+page.tsx
+Step 1: intent
+(Listen/Create/
+Both). Step 2:
+genre
+multi-select
+(min 3). Step
+3: artist follow
+grid. Step 4:
+artist profile
+setup. Step 5:
+Stripe Connect
+setup. Skip
+available on
+Steps 4–5.
+L 1.6
+1.8 Implement
+landing page
+apps/web/src/a
+pp/page.tsx
+Animated
+gradient mesh
+hero, feature
+trio, how it
+works (artists
++ listeners),
+pricing table
+(Free/$9.99/$1
+9.99),
+testimonials
+carousel,
+footer. SSG
+rendered.
+Redirects to
+/home if
+authenticated.
+L 1.2
+Built with Spine AI on 2026-06-23 38
+1.9 Implement
+home/discover
+y feed
+apps/web/src/a
+pp/home/page.
+tsx
+9 horizontal
+scroll rows
+with skeleton
+loading and
+staggered
+100ms reveal.
+All 9 API
+endpoints
+wired. Empty
+state for new
+users.
+Matches
+UI/UX Spec
+Section 3.5.
+L 1.3
+1.10 Add
+per-package
+package.json
+files for all
+workspaces
+apps/api/packa
+ge.json,
+apps/mobile/pa
+ckage.json,
+packages/block
+chain/package.
+json,
+packages/db-s
+chema/packag
+e.json,
+packages/disco
+very-algorithm/
+package.json,
+packages/pay
+ments/package
+.json,
+packages/royal
+ty-worker/pack
+age.json,
+packages/strea
+m-worker/pack
+age.json
+Each
+workspace
+has its own
+package.json
+with correct
+name, version,
+and
+dependencies.
+npm install
+from root
+resolves all
+workspace
+dependencies
+correctly.
+M Sprint 0
+1.11 Add
+wrangler.toml
+for Cloudflare
+Worker
+deployment
+packages/strea
+m-worker/wran
+gler.toml
+wrangler.toml
+with name,
+main,
+compatibility_d
+ate,
+kv_namespace
+s binding,
+queue binding.
+wrangler
+deploy
+succeeds.
+S Sprint 0
+Built with Spine AI on 2026-06-23 39
+1.12 Add EAS
+config for
+mobile app
+apps/mobile/ap
+p.json,
+apps/mobile/ea
+s.json
+app.json with
+iOS
+UIBackground
+Modes:
+['audio'],
+Android
+FOREGROUN
+D_SERVICE +
+WAKE_LOCK
+permissions,
+react-native-tra
+ck-player
+plugin.
+eas.json with
+production
+build profile.
+eas build
+--platform ios
+--profile
+production
+succeeds.
+M Sprint 0
+Sprint 2: Payments + Royalty Engine (Weeks 5–8)
+Table 19 — Sprint 2: Payments + Royalty Engine
+# Item File(s) Definition of
+Done
+Size Depends On
+2.1 Implement
+payout request
+endpoint
+apps/api/src/ro
+utes/payouts.ts
+POST
+/api/payouts/re
+quest —
+auth-guarded.
+Checks
+balance >=
+$10. Creates
+payout_batch
+record.
+Triggers Stripe
+transfer.
+Returns batch
+ID.
+M Sprint 0
+Built with Spine AI on 2026-06-23 40
+2.2 Add missing
+schema tables
+(Phase 1
+required)
+packages/db-s
+chema/schema
+.sql
+Add: albums,
+playlists,
+playlist_tracks,
+follows, likes,
+play_history,
+user_preferenc
+es,
+subscription_ti
+ers,
+fan_subscriptio
+ns,
+pending_mints.
+Migration runs
+without errors.
+L Sprint 0
+2.3 Implement
+stream_events
+auto-partition
+function
+packages/db-s
+chema/schema
+.sql
+PostgreSQL
+function
+create_stream
+_partition(year
+INT, month
+INT) creates
+partition if not
+exists.
+pg_cron job
+runs on 1st of
+each month to
+create next
+month's
+partition.
+Partitions exist
+through Dec
+2027.
+M Sprint 0
+2.4 Implement
+earnings
+overview page
+apps/web/src/a
+pp/studio/earni
+ngs/page.tsx
+3
+EarningsWidge
+t stat cards
+(total earnings,
+pending
+payout, this
+month). Donut
+chart
+(streaming/NF
+T/subscriptions
+). Payout
+history table.
+Request
+Payout button
+enabled when
+balance > $10.
+L 1.9, 2.1
+Built with Spine AI on 2026-06-23 41
+2.5 Implement
+royalty ledger
+page
+apps/web/src/a
+pp/studio/earni
+ngs/ledger/pag
+e.tsx
+Append-only
+display table.
+Filter by date
+range, track,
+event type.
+CSV export.
+NO edit or
+delete
+functionality.
+WARNING
+banner: 'This
+is a legal audit
+trail — display
+only.'
+M 2.4
+2.6 Implement
+Stripe Connect
+setup page
+apps/web/src/a
+pp/account/pay
+outs/page.tsx
+Shows
+Connected
+status with
+account
+details OR Not
+Connected
+state. Connect
+Stripe Account
+button triggers
+OAuth flow.
+Minimum
+payout
+threshold $10
+displayed.
+M 1.7
+2.7 Add Zod input
+validation to all
+API routes
+apps/api/src/ro
+utes/*.ts
+All route
+handlers
+validate
+request body
+and query
+params with
+Zod schemas.
+Invalid
+requests
+return 400 with
+structured
+error
+messages. No
+raw req.body
+access without
+validation.
+L Sprint 0
+Built with Spine AI on 2026-06-23 42
+2.8 Add rate
+limiting
+middleware
+apps/api/src/mi
+ddleware/rateLi
+mit.ts
+Rate limiting
+on all API
+routes: 100
+req/min per IP
+for public
+routes, 1000
+req/min per
+authenticated
+user. Returns
+429 with
+Retry-After
+header when
+exceeded.
+M Sprint 0
+2.9 Implement
+subscription
+checkout
+apps/api/src/ro
+utes/subscripti
+ons.ts,
+apps/web/src/a
+pp/account/sub
+scription/page.t
+sx
+POST
+/api/subscriptio
+ns/checkout
+creates Stripe
+Checkout
+session for
+$9.99/month
+(listener) and
+$19.99/month
+(Artist Pro).
+Webhook
+handler
+updated for
+customer.subs
+cription.created
+/updated/delete
+d.
+L 2.7
+2.10 Implement
+tipping
+endpoint
+apps/api/src/ro
+utes/tips.ts
+POST /api/tips
+—
+auth-guarded.
+Creates Stripe
+PaymentIntent
+with 8%
+platform fee.
+Inserts 'tip'
+ledger entry.
+Returns
+client_secret.
+M 2.7
+Sprint 3: Discovery + Search + Content (Weeks 9–12)
+Table 20 — Sprint 3: Discovery + Search + Content
+Built with Spine AI on 2026-06-23 43
+# Item File(s) Definition of
+Done
+Size Depends On
+3.1 Build Python
+ALS
+microservice
+(FastAPI)
+packages/disco
+very-algorithm/
+server.py
+FastAPI server
+with POST
+/train (triggers
+ALS training)
+and GET
+/recommend?u
+ser_id=X
+(returns top 20
+track IDs).
+Runs on port
+8000.
+Dockerfile
+included.
+L Sprint 0
+3.2 Wire
+recommendatio
+ns.ts to Python
+microservice
+apps/api/src/ro
+utes/recommen
+dations.ts
+GET
+/api/recommen
+dations calls
+PYTHON_REC
+OMMENDER_
+URL/recomme
+nd?user_id=X.
+Falls back to
+recent tracks if
+microservice
+unavailable.
+TODO
+comment
+removed.
+M 3.1
+Built with Spine AI on 2026-06-23 44
+3.3 Implement
+AcoustID
+fingerprinting
+packages/strea
+m-worker/acou
+stid.ts
+fingerprintAudi
+o(filePath)
+generates
+Chromaprint
+via fpcalc,
+queries
+AcoustID API,
+returns
+{isDuplicate,
+matchId} or
+{isDuplicate:
+false,
+fingerprint}.
+Called in
+upload
+pipeline. Sets
+track status to
+'dmca_hold' if
+duplicate
+detected.
+M Sprint 0
+3.4 Implement
+FFmpeg
+transcoding
+automation
+packages/strea
+m-worker/trans
+code.ts
+triggerTranscod
+e(trackId,
+rawFileKey)
+pulls raw
+audio from R2,
+runs FFmpeg
+HLS command
+(128k/256k/320
+k AAC, 10s
+segments),
+uploads .m3u8
++ .ts segments
+back to R2,
+updates
+track.file_url_hl
+s in database.
+Triggered by
+R2 object
+create event.
+L Sprint 0
+Built with Spine AI on 2026-06-23 45
+3.5 Implement
+search page
+apps/web/src/a
+pp/search/page
+.tsx,
+apps/web/src/a
+pp/search/[que
+ry]/page.tsx
+Default state:
+recent
+searches,
+genre browse
+grid, trending.
+Results state:
+tabbed
+(All/Tracks/Artis
+ts/Albums/Playl
+ists/NFTs).
+300ms
+debounce.
+URL updates
+to
+/search/[query].
+No-results
+empty state.
+L 1.3
+3.6 Implement
+artist profile
+page
+apps/web/src/a
+pp/artist/[slug]/
+page.tsx
+Header banner
+(280px),
+avatar
+overlapping,
+popular tracks
+(top 5),
+discography
+tabs, about
+(expandable),
+fan
+subscriptions,
+NFTs, similar
+artists. All 6
+API endpoints
+wired.
+L 1.3
+3.7 Implement
+track detail
+page
+apps/web/src/a
+pp/track/[id]/pa
+ge.tsx
+Two-column
+layout. Cover
+art with
+--shadow-acce
+nt glow.
+Credits
+accordion.
+Splits
+accordion with
+pie chart. NFT
+status badge.
+Comments
+section.
+L 1.3
+Built with Spine AI on 2026-06-23 46
+3.8 Implement
+album/EP page
+apps/web/src/a
+pp/album/[id]/p
+age.tsx
+Two-column
+hero
+(desktop).
+Numbered
+track list. Play
+All queues
+entire album.
+More from
+artist section.
+M 1.3
+3.9 Implement
+genre browse
+page
+apps/web/src/a
+pp/genre/[slug]/
+page.tsx
+Genre hero
+with gradient
+background.
+Tabs: Top
+Tracks / New
+Releases /
+Artists /
+Playlists.
+M 1.3
+3.10 Implement
+studio upload
+flow
+apps/web/src/a
+pp/studio/uploa
+d/page.tsx
+3-step: Step 1
+audio
+dropzone +
+WaveSurfer.js
+waveform.
+Step 2
+metadata
+(cover art
+crop, title,
+album, genre,
+release date,
+explicit). Step
+3 rights &
+splits (must
+sum to 100%,
+Add rights
+holder button,
+NFT mint
+toggle).
+L 2.7
+3.11 Implement
+studio catalog
+apps/web/src/a
+pp/studio/catal
+og/page.tsx,
+apps/web/src/a
+pp/studio/catal
+og/[trackId]/pag
+e.tsx
+Desktop table
+with status
+badges
+(Live/Draft/Sch
+eduled/Remov
+ed). Edit track
+page
+pre-populates
+upload form
+Steps 2+3.
+Danger zone:
+Take Down /
+Delete.
+L 3.10
+Built with Spine AI on 2026-06-23 47
+3.12 Add A/B
+testing
+framework
+packages/disco
+very-algorithm/
+ab_test.py,
+packages/db-s
+chema/schema
+.sql
+(user_experime
+nts table)
+hash(user_id)
+% 2
+deterministic
+assignment.
+user_experime
+nts table logs
+assignments.
+Weekly
+nDCG@10
+evaluation job.
+Algorithm
+group target:
+40%+ 30-day
+retention.
+M 3.1
+Sprint 4: Blockchain + NFT + DAO (Weeks 13–16)
+Table 21 — Sprint 4: Blockchain + NFT + DAO
+# Item File(s) Definition of
+Done
+Size Depends On
+4.1 Fix
+HarmonyWallet
+Provider.tsx —
+replace web
+adapter with
+React Native
+compatible
+solution
+apps/mobile/sr
+c/providers/Har
+monyWalletPro
+vider.tsx
+Replace
+@solana/wallet
+-adapter-reactui with Mobile
+Wallet Adapter
+protocol or
+Phantom
+deeplink.
+Wallet
+connection
+works on
+physical iOS
+and Android
+devices
+without
+crashing.
+L Sprint 0
+Built with Spine AI on 2026-06-23 48
+4.2 Implement
+NFT
+marketplace
+API routes
+apps/api/src/ro
+utes/marketpla
+ce.ts
+GET
+/api/marketplac
+e (list with
+filters), GET
+/api/marketplac
+e/:nftId
+(detail), POST
+/api/marketplac
+e/list (create
+listing), POST
+/api/marketplac
+e/:nftId/buy
+(purchase),
+GET
+/api/marketplac
+e/featured. All
+auth-guarded
+where required.
+L 2.7, 3.11
+4.3 Add
+nft_listings
+and
+pending_mints
+tables to
+schema
+packages/db-s
+chema/schema
+.sql
+nft_listings: id,
+track_id,
+rights_holder_i
+d,
+edition_type,
+edition_count,
+price_cents,
+arweave_meta
+data_url,
+status,
+created_at.
+pending_mints:
+id,
+nft_listing_id,
+buyer_user_id,
+payment_intent
+_id, status,
+created_at.
+M 2.2
+Built with Spine AI on 2026-06-23 49
+4.4 Implement
+NFT mint flow
+(web)
+apps/web/src/a
+pp/studio/nfts/
+mint/[trackId]/p
+age.tsx
+3-step: Step 1
+edition setup
+(1/1 vs limited,
+count). Step 2
+pricing +
+benefits (price,
+royalty %
+slider,
+collector
+benefits
+checklist).
+Step 3 publish
+(wallet
+connect, gas
+estimate, Mint
+NFT button).
+Success state
+with share link.
+L 4.2, 4.3
+4.5 Implement
+NFT
+marketplace
+page (web)
+apps/web/src/a
+pp/marketplace
+/page.tsx
+Filter sidebar
+(genre, price
+range, status,
+artist).
+NFTCard grid
+(4-col desktop,
+2-col mobile).
+Sort bar.
+Infinite scroll
+pagination.
+L 4.2
+4.6 Implement
+NFT detail
+page (web)
+apps/web/src/a
+pp/marketplace
+/[nftId]/page.tsx
+Two-column:
+left (art 480px,
+embedded
+track player,
+description,
+ownership
+history table).
+Right
+(purchase
+panel: price,
+edition info,
+Buy Now
+button, royalty
+info, artist
+info). Wallet
+connect flow.
+L 4.5
+Built with Spine AI on 2026-06-23 50
+4.7 Implement
+DAO
+proposals API
+apps/api/src/ro
+utes/dao.ts
+GET
+/api/dao/active,
+GET
+/api/dao/propos
+als (all with
+filter), GET
+/api/dao/propos
+als/:id, POST
+/api/dao/propos
+als (create),
+POST
+/api/dao/propos
+als/:id/vote.
+Add
+dao_proposals
++ dao_votes
+tables.
+L 2.2, 2.7
+4.8 Implement
+DAO feed
+page (web)
+apps/web/src/a
+pp/dao/page.ts
+x,
+apps/web/src/a
+pp/dao/[propos
+alId]/page.tsx
+Filter tabs:
+Active/Passed/
+Failed/All.
+ProposalCard
+list. Proposal
+detail: full text
++ voting panel
+(For/Against/A
+bstain tally
+bars, vote
+buttons, time
+remaining).
+L 4.7
+4.9 Implement
+collectibles
+page (web)
+apps/web/src/a
+pp/collectibles/
+page.tsx
+Grid of owned
+NFTCards
+(Owned
+variant). Filter
+by artist,
+genre. Empty
+state: 'No
+collectibles
+yet.' CTA:
+Browse
+Marketplace.
+M 4.5
+Built with Spine AI on 2026-06-23 51
+4.10 Implement
+wallet
+connection
+page (web)
+apps/web/src/a
+pp/account/wall
+et/page.tsx
+Connected
+wallet card
+(address
+truncated,
+network,
+balance).
+Connect
+Wallet button
+(WalletConnect
+modal).
+Disconnect
+button.
+Supported:
+MetaMask,
+WalletConnect,
+Coinbase
+Wallet.
+M 1.6
+Sprint 5: Mobile Polish + IAP + EAS (Weeks 17–20)
+Table 22 — Sprint 5: Mobile Polish + IAP + EAS
+# Item File(s) Definition of
+Done
+Size Depends On
+5.1 Fix
+LibraryScreen
+— replace
+MOCK_LIBRA
+RY with real
+API
+apps/mobile/sr
+c/screens/Libra
+ryScreen.tsx
+Fetches real
+liked tracks,
+playlists,
+history,
+following feed
+from API.
+Sub-nav tabs
+functional.
+Empty states
+per UI/UX
+spec.
+MOCK_LIBRA
+RY removed.
+M 2.2
+Built with Spine AI on 2026-06-23 52
+5.2 Fix
+ProfileScreen
+— replace
+mock with real
+user data
+apps/mobile/sr
+c/screens/Profil
+eScreen.tsx
+Fetches
+authenticated
+user profile
+from API. Real
+stats (tracks,
+plays,
+earnings). Edit
+profile
+navigation.
+'Aurora Veil'
+hardcode
+removed.
+M Sprint 0
+5.3 Fix
+StudioScreen
+— replace
+MOCK_TRAC
+KS with real
+API
+apps/mobile/sr
+c/screens/Studi
+oScreen.tsx
+Fetches real
+artist tracks,
+real earnings
+data, real
+chart data
+from API.
+MOCK_TRAC
+KS and
+hardcoded
+chartData
+removed.
+M 2.4
+5.4 Fix NFT listing
+button in
+StudioScreen
+apps/mobile/sr
+c/screens/Studi
+oScreen.tsx
+NFT listing
+button
+navigates to
+NFT mint flow
+(web redirect
+via
+Linking.openU
+RL to
+/studio/nfts/min
+t/[trackId]).
+Non-functional
+state removed.
+S 4.4
+Built with Spine AI on 2026-06-23 53
+5.5 Implement IAP
+— Apple
+StoreKit 2 +
+Google Play
+Billing
+apps/mobile/sr
+c/services/iap.t s
+expo-in-app-pu
+rchases
+configured.
+$9.99/month
+and
+$19.99/month
+subscription
+products
+created in App
+Store Connect
+and Google
+Play Console.
+Purchase flow
+completes in
+sandbox.
+Receipt
+validation
+against API.
+L 1.12
+5.6 Implement
+push
+notifications
+apps/mobile/sr
+c/services/notifi
+cations.ts
+Expo
+Notifications
+configured.
+Push token
+registered with
+API on login.
+Notifications
+received for:
+new follower,
+stream
+milestone,
+NFT sold,
+payout
+processed,
+new release
+from followed
+artist.
+M 1.12
+5.7 Implement
+mobile library
+API routes
+apps/api/src/ro
+utes/library.ts
+GET
+/api/library/like
+d, GET
+/api/library/hist
+ory, GET
+/api/library/follo
+wing, POST
+/api/library/like
+d/:trackId,
+DELETE
+/api/library/like
+d/:trackId. All
+auth-guarded.
+M 2.2
+Built with Spine AI on 2026-06-23 54
+5.8 Implement
+mobile
+notifications
+API
+apps/api/src/ro
+utes/notificatio
+ns.ts
+GET
+/api/notification
+s (paginated),
+PATCH
+/api/notification
+s/read-all,
+PATCH
+/api/notification
+s/:id/read.
+Notification
+creation
+triggered by
+relevant
+events (follow,
+stream
+milestone,
+payout).
+M 2.2
+5.9 Submit to App
+Store and
+Google Play
+apps/mobile/
+(EAS Build)
+eas build
+--platform all
+--profile
+production
+succeeds. App
+submitted to
+App Store
+review. App
+submitted to
+Google Play
+review. Both
+apps approved
+and live.
+L 5.5, 1.12
+5.10 Implement
+HomeScreen
+DAO section
+with real data
+apps/mobile/sr
+c/screens/Hom
+eScreen.tsx
+DAO
+proposals
+section
+fetches from
+GET
+/api/dao/active.
+MOCK_PROP
+OSALS
+removed.
+Empty state if
+no active
+proposals.
+S 4.7
+Sprint 6: Polish + Launch (Weeks 21–24)
+Table 23 — Sprint 6: Polish + Launch
+Built with Spine AI on 2026-06-23 55
+# Item File(s) Definition of
+Done
+Size Depends On
+6.1 Implement
+DMCA
+takedown
+endpoint +
+workflow
+apps/api/src/ro
+utes/dmca.ts
+POST
+/api/dmca/take
+down (receive
+notice), POST
+/api/dmca/coun
+ter
+(counter-notific
+ation), GET
+/api/dmca/statu
+s/:trackId.
+24-hour
+response SLA.
+Sets track
+status to
+'dmca_hold'.
+Notifies artist.
+Repeat
+infringer
+policy: 3
+strikes
+rightarrow
+account
+termination.
+L 2.7
+6.2 Register
+DMCA agent
+with Copyright
+Office
+(External
+action)
+DMCA agent
+registered at
+copyright.gov
+($6 fee).
+dmca@harmon
+y.fm
+designated
+email active.
+Registration
+confirmation
+saved.
+S 6.1
+6.3 Add Sentry
+error
+monitoring
+apps/api/src/in
+dex.ts,
+apps/web/src/a
+pp/layout.tsx,
+apps/mobile/Ap
+p.tsx
+SENTRY_DSN
+configured.
+Sentry
+initialized in
+API, web app,
+and mobile
+app. Errors
+appear in
+Sentry
+dashboard.
+Source maps
+uploaded.
+M Sprint 0
+Built with Spine AI on 2026-06-23 56
+6.4 Add CI/CD
+pipeline
+.github/workflo
+ws/ci.yml,
+.github/workflo
+ws/deploy.yml
+CI: runs on
+every PR —
+TypeScript
+typecheck,
+ESLint, unit
+tests. Deploy:
+runs on main
+branch merge
+— deploys API
+to Railway,
+web to Vercel,
+Worker to
+Cloudflare. All
+checks pass.
+L Sprint 0
+6.5 Implement
+messages/DM
+system
+apps/api/src/ro
+utes/messages
+.ts,
+apps/web/src/a
+pp/messages/p
+age.tsx
+GET/POST
+/api/messages/
+threads,
+GET/POST
+/api/messages/
+:threadId.
+WebSocket
+/ws/messages
+for real-time
+delivery.
+Two-panel
+desktop
+layout. Track
+sharing in
+messages.
+Mobile:
+full-screen
+thread view.
+L 2.2
+Built with Spine AI on 2026-06-23 57
+6.6 Implement
+subscription
+tiers system
+apps/api/src/ro
+utes/subscripti
+ons.ts,
+apps/web/src/a
+pp/studio/fans/
+page.tsx
+POST
+/api/studio/fans
+/tiers (create),
+PATCH
+/api/studio/fans
+/tiers/:id (edit),
+DELETE
+/api/studio/fans
+/tiers/:id. Max
+3 tiers per
+artist.
+Subscriber
+table with
+MRR. Fan
+subscription
+page for
+listeners.
+L 2.9
+6.7 Implement
+audience
+analytics pages
+apps/web/src/a
+pp/studio/analy
+tics/page.tsx,
+apps/web/src/a
+pp/studio/analy
+tics/[trackId]/pa
+ge.tsx
+World map
+heatmap,
+streams by
+time of day
+(bar chart),
+listener growth
+(line chart),
+top sources
+(horizontal
+bar), per-track
+table.
+Per-track:
+same charts +
+listener
+retention curve.
+L 3.11
+6.8 Performance
+audit +
+optimization
+All files Lighthouse
+score > 90 on
+web app. API
+response
+times < 200ms
+p95. Mobile
+app startup
+time < 3
+seconds. R2
+CDN custom
+domain
+configured
+(cdn.harmony.f
+m CNAME to
+R2 bucket).
+L All sprints
+Built with Spine AI on 2026-06-23 58
+6.9 Security audit apps/api/src/ro
+utes/*.ts,
+apps/web/src/
+All API routes
+have auth
+guards where
+required. All
+inputs
+validated with
+Zod. Rate
+limiting active.
+No SQL
+injection
+vectors.
+CORS
+configured
+correctly. CSP
+headers on
+web app.
+L All sprints
+6.10 Beta launch
+checklist
+(All files) 50+ artists
+onboarded.
+500+ tracks
+uploaded.
+$1,000+ in
+royalties paid
+out. Zero
+unresolved
+DMCA
+violations.
+AcoustID
+running on all
+uploads.
+ASCAP/BMI/S
+ESAC blanket
+licenses
+active. App
+Store + Play
+Store apps
+live.
+Monitoring
+dashboards
+showing
+real-time
+metrics.
+L All sprints
+Section 7: Critical Decisions Needed Before Building
+Decision 1: Monorepo Package Manager
+Table 24 — Decision 1: Monorepo Package Manager
+Built with Spine AI on 2026-06-23 59
+Field Detail
+Context The repo uses npm workspaces but has no
+per-package package.json files. The monorepo is
+not fully configured. This affects every build
+command, every CI step, and every deployment
+pipeline.
+Option A npm workspaces (current) — minimal config,
+familiar, but slow installs and permissive hoisting
+allows phantom dependency bugs.
+Option B pnpm workspaces — faster installs, strict hoisting
+prevents phantom dependencies, better for
+monorepos.
+Option C Turborepo + pnpm — best for monorepo at scale.
+Turborepo adds build caching (saves significant CI
+time), task orchestration, and remote caching.
+pnpm provides strict dependency isolation.
+Recommendation Option C — Turborepo + pnpm. The build pipeline
+complexity (TypeScript API + Next.js web + Expo
+mobile + Python microservice + Cloudflare Worker)
+justifies the setup cost. Remote caching will save
+hours of CI time per week.
+Deadline Sprint 1, Day 1 — before any new packages are
+added. Changing package managers after the fact
+is painful.
+Decision 2: API Architecture
+Table 25 — Decision 2: API Architecture
+Field Detail
+Context The repo has a Fastify API at apps/api. The
+blueprint mentions Next.js API routes. These are
+two different architectures. Mixing them creates
+confusion about where business logic lives.
+Option A Keep Fastify as standalone API (current) —
+already built, handles WebSockets natively, better
+for royalty worker and stream processing, no
+framework lock-in.
+Built with Spine AI on 2026-06-23 60
+Option B Migrate to Next.js API routes — collocates web
+frontend and API, but loses WebSocket support,
+worse for background jobs, and requires rewriting
+all existing routes.
+Option C Keep Fastify + add Next.js for web-only routes —
+hybrid approach, but creates confusion about
+which layer handles what.
+Recommendation Option A — Keep Fastify. It is already built and
+tested. It handles WebSockets natively (required
+for real-time messages). It is better suited for the
+royalty worker and stream processing. Next.js API
+routes are fine for simple CRUD but Fastify is the
+right tool for this use case.
+Deadline Sprint 1 — must be decided before building the
+web app so the API client is configured correctly.
+Decision 3: Auth Provider
+Table 26 — Decision 3: Auth Provider
+Field Detail
+Context The repo uses Clerk. The blueprint specifies Clerk.
+This is already decided. However, the web app
+needs Clerk configured separately from the mobile
+app using @clerk/nextjs.
+Option A Clerk (current) — already integrated in mobile via
+@clerk/fastify. Use @clerk/nextjs for web. Single
+auth provider across all surfaces.
+Option B NextAuth — would require rewriting auth.ts and all
+mobile auth. Not justified.
+Option C Supabase Auth — would require rewriting auth.ts
+and all mobile auth. Not justified.
+Recommendation Option A — Clerk. Already integrated. Do not
+change. Add
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY to
+.env.example and configure @clerk/nextjs in
+apps/web in Sprint 1.
+Deadline Already decided. Configure for web in Sprint 1, Day
+1.
+Built with Spine AI on 2026-06-23 61
+Decision 4: Database Hosting
+Table 27 — Decision 4: Database Hosting
+Field Detail
+Context DATABASE_URL points to localhost. For
+production, a hosted PostgreSQL is needed. The
+schema uses RANGE partitioning, DEFERRABLE
+triggers, and REVOKE statements — not all hosts
+support these equally.
+Option A Supabase — free tier (500MB, 50K MAU),
+managed, has realtime subscriptions. Free tier
+connection limits will hurt at scale. Partitioning
+supported.
+Option B Railway PostgreSQL — simple, cheap ($5/month),
+no connection limits on paid tier. Partitioning
+supported. Good for production simplicity.
+Option C Neon — serverless PostgreSQL with database
+branching. Branching is extremely useful for
+schema migrations (test migrations on a branch
+before applying to production). Partitioning
+supported.
+Recommendation Neon for development (branching for safe schema
+migrations) + Railway for production (simplicity, no
+cold starts, predictable pricing). Use
+DATABASE_URL to switch between environments.
+Deadline Sprint 1 — needed before any production
+deployment or schema migration work.
+Decision 5: Cloudflare Workers vs. Next.js for Stream Counting
+Table 28 — Decision 5: Cloudflare Workers vs. Next.js for Stream Counting
+Field Detail
+Context stream-counter.ts is a Cloudflare Worker. This is
+the correct architecture — it runs at the edge, close
+to users, with zero cold starts and KV for
+deduplication. But it needs wrangler.toml to deploy.
+Built with Spine AI on 2026-06-23 62
+Option A Keep Cloudflare Worker (current architecture) —
+edge execution, zero cold starts, KV dedup, scales
+automatically. Requires wrangler.toml.
+Option B Move to Next.js API route — simpler deployment
+but loses edge execution, adds latency, no KV
+dedup without Redis.
+Option C Move to Fastify endpoint — same as Option B but
+in the existing API. Adds load to the API server.
+Recommendation Option A — Keep Cloudflare Worker. The blueprint
+is correct. The edge architecture is the right choice
+for stream counting at scale. Add wrangler.toml in
+Sprint 0 (Action 2 in Section 8).
+Deadline Sprint 0 — add wrangler.toml before any stream
+counting works in production.
+Decision 6: React Native Workflow
+Table 29 — Decision 6: React Native Workflow
+Field Detail
+Context The repo uses Expo SDK 50 but has no app.json
+or eas.json. The workflow (managed vs bare)
+affects what native modules can be used.
+react-native-track-player and the Solana wallet
+adapter both require native modules.
+Option A Expo managed workflow — easiest, OTA updates,
+but limited native module access.
+react-native-track-player requires native code that
+managed workflow cannot handle.
+Option B Expo bare workflow — full native access, more
+complexity, but supports all native modules. EAS
+Build handles iOS compilation without a local Mac.
+Option C React Native CLI (no Expo) — maximum control,
+but loses EAS Build, OTA updates, and Expo SDK
+conveniences. Not justified.
+Built with Spine AI on 2026-06-23 63
+Recommendation Option B — Expo bare workflow.
+react-native-track-player requires native modules
+(Android foreground service, iOS audio session).
+The Solana Mobile Wallet Adapter requires native
+modules. Managed workflow will not work. EAS
+Build still handles iOS compilation without a Mac.
+Deadline Sprint 1 — configure app.json and eas.json before
+any native module work begins.
+Decision 7: State Management
+Table 30 — Decision 7: State Management
+Field Detail
+Context The mobile app uses React Context
+(PlayerProvider, HarmonyWalletProvider). The web
+app does not exist yet. A consistent state
+management approach is needed across both
+surfaces.
+Option A Zustand — lightweight, simple, minimal boilerplate.
+Good for client state (player, queue, UI state). Not
+designed for server state caching.
+Option B Redux Toolkit — powerful, verbose, excellent
+DevTools. Overkill for a solo builder. Too much
+boilerplate.
+Option C React Query (TanStack Query) + Zustand — React
+Query for server state (tracks, user data,
+recommendations, earnings) with automatic
+caching, background refetching, and optimistic
+updates. Zustand for client state (player queue, UI
+state, wallet state). This is the modern standard.
+Recommendation Option C — React Query + Zustand. React Query
+eliminates the need to manually manage
+loading/error/data states for every API call. Zustand
+is perfect for the player queue and UI state. This
+combination is used by the best React Native apps
+in production.
+Deadline Sprint 1 — before building any web app
+components or refactoring mobile screens.
+Built with Spine AI on 2026-06-23 64
+Section 8: What Nick Should Do Today
+These 5 actions unblock everything else. Do them in order. Open Cursor now.
+Action 1: Fix the 3 Critical Bugs That Will Cause Production
+Failures
+Open Cursor. Make these exact changes in this exact order.
+File 1: packages/royalty-worker/weekly-payout.ts
+Find the SQL query that reads: SELECT rh.id AS rights_holder_id, SUM(rl.amount_cents) AS
+pending_balance_cents FROM royalty_ledger rl JOIN rights_holders rh ON rl.rights_holder_id =
+rh.id ... GROUP BY rh.id
+Change it to: SELECT rh.id AS rights_holder_id, rh.stripe_connect_account_id,
+SUM(rl.amount_cents) AS pending_balance_cents FROM royalty_ledger rl JOIN rights_holders rh
+ON rl.rights_holder_id = rh.id ... GROUP BY rh.id, rh.stripe_connect_account_id
+Why: Without stripe_connect_account_id in the SELECT, payout.stripe_connect_account_id is
+always undefined. The Stripe transfer destination is undefined. Every weekly payout fails silently.
+Artists never get paid.
+File 2: apps/api/src/routes/payments.ts
+Find both route definitions: fastify.post('/api/payments/onboard', async (request, reply) => { and
+fastify.post('/api/payments/purchase', async (request, reply) => {
+Add preHandler: [requireAuth] to both: fastify.post('/api/payments/onboard', { preHandler:
+[requireAuth] }, async (request, reply) => { and fastify.post('/api/payments/purchase', { preHandler:
+[requireAuth] }, async (request, reply) => {
+Why: Without auth guards, any unauthenticated caller can trigger Stripe Connect onboarding or
+purchase flows. This is an open abuse vector that can generate fraudulent Stripe accounts and
+unauthorized charges.
+File 3: apps/api/src/index.ts
+Find: import { trackRoutes } from './routes/tracks.ts';
+Change to: import { trackRoutes } from './routes/tracks.js';
+Why: NodeNext module resolution requires .js extensions in imports even for TypeScript files. The
+.ts extension causes a runtime module resolution failure. The API server will crash on startup.
+Action 2: Add wrangler.toml So the Cloudflare Worker Can Deploy
+Create the file packages/stream-worker/wrangler.toml with the following exact content:
+name = "harmony-stream-counter" | main = "stream-counter.ts" | compatibility_date = "2026-06-22"
+| compatibility_flags = ["nodejs_compat"] | [[kv_namespaces]] | binding = "STREAM_KV" | id =
+"YOUR_KV_NAMESPACE_ID" | [[queues.producers]] | binding = "STREAM_QUEUE" | queue =
+Built with Spine AI on 2026-06-23 65
+"harmony-stream-events" | [vars] | ENVIRONMENT = "production"
+Then add CLOUDFLARE_KV_NAMESPACE_ID and CLOUDFLARE_WORKER_URL to
+.env.example. Create the KV namespace in the Cloudflare dashboard and replace
+YOUR_KV_NAMESPACE_ID with the real ID. Run: cd packages/stream-worker && npx wrangler
+deploy to verify deployment.
+Why: Without wrangler.toml, the Cloudflare Worker cannot be deployed. Stream counting does not
+work. Royalty attribution has no data. The entire royalty pipeline is broken.
+Action 3: Initialize the Next.js Web App
+Run this exact command from the repo root:
+cd apps && npx create-next-app@latest web --typescript --tailwind --eslint --app --src-dir
+--import-alias "@/*"
+Then immediately: (1) Add NEXT_PUBLIC_API_URL=http://localhost:4000 and
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxx to apps/web/.env.local. (2) Install
+Clerk: cd apps/web && npm install @clerk/nextjs. (3) Wrap apps/web/src/app/layout.tsx with
+ClerkProvider. (4) Create apps/web/src/styles/globals.css and add all CSS custom properties from
+UI/UX Spec Section 1 (all --bg-*, --accent-*, --text-*, --border-*, --shadow-*, --radius-*, --space-*,
+--transition-* tokens). (5) Configure Inter font with weights 400/500/600/700 only.
+Why: The entire web frontend is missing. apps/web does not exist. The web app is the primary
+product surface — 44 routes, the landing page, the artist studio, the NFT marketplace, and the full
+desktop experience are all absent. This is the single largest gap in the codebase.
+Action 4: Add Per-Package package.json Files
+Create the following files. Without them, npm workspaces cannot resolve dependencies
+correctly and the monorepo build is broken.
+Table 31 — Per-Package package.json Files to Create
+File to Create Minimum Content Required
+apps/api/package.json { "name": "@harmony/api", "version": "0.1.0",
+"type": "module", "main": "src/index.ts", "scripts": {
+"dev": "tsx watch src/index.ts", "build": "tsc", "start":
+"node dist/index.js" } }
+apps/mobile/package.json { "name": "@harmony/mobile", "version": "0.1.0",
+"main": "App.tsx", "scripts": { "start": "expo start",
+"ios": "expo run:ios", "android": "expo run:android" }
+}
+packages/blockchain/package.json { "name": "@harmony/blockchain", "version":
+"0.1.0", "type": "module", "scripts": { "build": "tsc" } }
+Built with Spine AI on 2026-06-23 66
+packages/db-schema/package.json { "name": "@harmony/db-schema", "version":
+"0.1.0", "scripts": { "migrate": "psql
+$DATABASE_URL -f schema.sql" } }
+packages/discovery-algorithm/package.json { "name": "@harmony/discovery-algorithm",
+"version": "0.1.0", "scripts": { "start": "python
+server.py", "train": "python als_recommender.py" } }
+packages/payments/package.json { "name": "@harmony/payments", "version":
+"0.1.0", "type": "module", "scripts": { "build": "tsc" } }
+packages/royalty-worker/package.json { "name": "@harmony/royalty-worker", "version":
+"0.1.0", "type": "module", "scripts": { "dev": "tsx
+watch src/server.ts", "build": "tsc", "start": "node
+dist/src/server.js" } }
+packages/stream-worker/package.json { "name": "@harmony/stream-worker", "version":
+"0.1.0", "type": "module", "scripts": { "dev":
+"wrangler dev", "deploy": "wrangler deploy" } }
+Action 5: Add stream_events Partitions for the Rest of 2026 and All
+of 2027
+Run this SQL against your database immediately. Production will break on September 1,
+2026 without it.
+-- Add missing 2026 partitions (Sep–Dec): CREATE TABLE IF NOT EXISTS
+stream_events_y2026m09 PARTITION OF stream_events FOR VALUES FROM ('2026-09-01') TO
+('2026-10-01'); CREATE TABLE IF NOT EXISTS stream_events_y2026m10 PARTITION OF
+stream_events FOR VALUES FROM ('2026-10-01') TO ('2026-11-01'); CREATE TABLE IF NOT
+EXISTS stream_events_y2026m11 PARTITION OF stream_events FOR VALUES FROM
+('2026-11-01') TO ('2026-12-01'); CREATE TABLE IF NOT EXISTS stream_events_y2026m12
+PARTITION OF stream_events FOR VALUES FROM ('2026-12-01') TO ('2027-01-01'); -- Add all
+2027 partitions: CREATE TABLE IF NOT EXISTS stream_events_y2027m01 PARTITION OF
+stream_events FOR VALUES FROM ('2027-01-01') TO ('2027-02-01'); CREATE TABLE IF NOT
+EXISTS stream_events_y2027m02 PARTITION OF stream_events FOR VALUES FROM
+('2027-02-01') TO ('2027-03-01'); CREATE TABLE IF NOT EXISTS stream_events_y2027m03
+PARTITION OF stream_events FOR VALUES FROM ('2027-03-01') TO ('2027-04-01'); CREATE
+TABLE IF NOT EXISTS stream_events_y2027m04 PARTITION OF stream_events FOR VALUES
+FROM ('2027-04-01') TO ('2027-05-01'); CREATE TABLE IF NOT EXISTS
+stream_events_y2027m05 PARTITION OF stream_events FOR VALUES FROM ('2027-05-01') TO
+('2027-06-01'); CREATE TABLE IF NOT EXISTS stream_events_y2027m06 PARTITION OF
+stream_events FOR VALUES FROM ('2027-06-01') TO ('2027-07-01'); CREATE TABLE IF NOT
+EXISTS stream_events_y2027m07 PARTITION OF stream_events FOR VALUES FROM
+Built with Spine AI on 2026-06-23 67
+('2027-07-01') TO ('2027-08-01'); CREATE TABLE IF NOT EXISTS stream_events_y2027m08 PARTITION OF stream_events
+FOR VALUES FROM ('2027-08-01') TO ('2027-09-01'); CREATE TABLE IF NOT EXISTS stream_events_y2027m09 PARTITION OF
+stream_events FOR VALUES FROM ('2027-09-01') TO ('2027-10-01'); CREATE TABLE IF NOT EXISTS stream_events_y2027m10
+PARTITION OF stream_events FOR VALUES FROM ('2027-10-01') TO ('2027-11-01'); CREATE TABLE IF NOT EXISTS
+stream_events_y2027m11 PARTITION OF stream_events FOR VALUES FROM ('2027-11-01') TO ('2027-12-01'); CREATE TABLE IF
+NOT EXISTS stream_events_y2027m12 PARTITION OF stream_events FOR VALUES FROM ('2027-12-01') TO ('2028-01-01');
+Then add this auto-partition function to packages/db-schema/schema.sql to prevent this from
+happening again:
+CREATE OR REPLACE FUNCTION create_stream_partition(target_year INT, target_month INT)
+RETURNS VOID AS $$ DECLARE partition_name TEXT; start_date DATE; end_date DATE;
+BEGIN partition_name := 'stream_events_y' || target_year || 'm' || LPAD(target_month::TEXT, 2,
+'0'); start_date := make_date(target_year, target_month, 1); end_date := start_date + INTERVAL '1
+month'; IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = partition_name) THEN
+EXECUTE format('CREATE TABLE %I PARTITION OF stream_events FOR VALUES FROM (%L)
+TO (%L)', partition_name, start_date, end_date); END IF; END; $$ LANGUAGE plpgsql; --
+Schedule with pg_cron (run on 1st of each month at 00:00 UTC): -- SELECT
+cron.schedule('create-next-partition', '0 0 1 * *', $$SELECT
+create_stream_partition(EXTRACT(YEAR FROM NOW() + INTERVAL '1 month')::INT,
+EXTRACT(MONTH FROM NOW() + INTERVAL '1 month')::INT)$$);
+Appendix: Complete Bug Tracker
+Table 32 — Complete Bug Tracker: All 15 Bugs with Exact Fixes
+# Severity File Bug Description Exact Fix
+1 Critical packages/royaltyworker/weekly-pay
+out.ts
+SQL query does
+not SELECT
+rh.stripe_connect_
+account_id.
+payout.stripe_conn
+ect_account_id is
+always undefined.
+Every weekly
+Stripe transfer
+fails silently.
+Artists never
+receive payouts.
+Add
+rh.stripe_connect_
+account_id to
+SELECT clause.
+Add to GROUP
+BY clause. Verify
+with a test payout
+against Stripe test
+mode.
+Built with Spine AI on 2026-06-23 68
+2 Critical apps/api/src/routes
+/payments.ts
+POST
+/api/payments/onb
+oard and POST
+/api/payments/purc
+hase have NO
+preHandler:
+[requireAuth]. Any
+unauthenticated
+caller can trigger
+Stripe Connect
+onboarding or
+purchase flows.
+Open abuse
+vector.
+Add { preHandler:
+[requireAuth] } as
+second argument
+to both
+fastify.post() calls.
+Verify with curl
+without
+Authorization
+header — must
+return 401.
+3 Critical apps/api/src/index.
+ts
+import {
+trackRoutes } from
+'./routes/tracks.ts'
+— .ts extension in
+import. NodeNext
+module resolution
+requires .js
+extensions. API
+server crashes on
+startup with
+module not found
+error.
+Change to import
+{ trackRoutes }
+from
+'./routes/tracks.js'.
+Verify API server
+starts without
+errors.
+4 High packages/db-sche
+ma/schema.sql
+stream_events
+table only has
+partitions for
+Jun/Jul/Aug 2026.
+Any stream event
+after 2026-09-01
+throws
+PostgreSQL
+partition error.
+Production breaks
+on September 1,
+2026.
+Run SQL to
+create partitions
+for Sep 2026
+through Dec 2027.
+Add
+create_stream_par
+tition() function.
+Schedule with
+pg_cron. See
+Action 5 in
+Section 8.
+Built with Spine AI on 2026-06-23 69
+5 High apps/mobile/src/uti
+ls/audio-player.ts
+playHlsStream
+hardcodes url:
+https://cdn.harmon
+y.fm/tracks/${trackI
+d}/master.m3u8.
+Ignores fileUrlHls
+from API
+response.
+Playback fails
+unless CDN is
+configured exactly
+as
+cdn.harmony.fm.
+Add fileUrlHls
+parameter to
+playHlsStream
+function signature.
+Use fileUrlHls as
+the url field in
+TrackPlayer.add().
+Remove
+hardcoded
+cdn.harmony.fm
+URL.
+6 High apps/api/src/routes
+/recommendations.
+ts
+Returns recent
+tracks for ALL
+users regardless
+of identity. Not a
+real
+recommendation
+engine. TODO
+comment to wire
+Python ALS has
+never been
+actioned.
+Build FastAPI
+microservice in
+packages/discover
+y-algorithm/server.
+py. Add
+PYTHON_RECOM
+MENDER_URL to
+.env.example.
+Replace recent
+tracks query with
+HTTP call to
+microservice. Add
+fallback to recent
+tracks if
+microservice
+unavailable.
+7 Medium apps/mobile/src/pr
+oviders/PlayerProv
+ider.tsx
+useProgress is
+imported from
+react-native-trackplayer but never
+called. progress
+state is always
+{position: 0,
+duration: 0}. Seek
+slider in
+FullScreenPlayerS
+creen permanently
+shows 0:00/0:00.
+Call const
+progress =
+useProgress()
+inside the
+PlayerProvider
+component.
+Update the
+progress state
+from the hook's
+return value.
+Expose updated
+progress via
+context.
+Built with Spine AI on 2026-06-23 70
+8 Medium apps/mobile/src/sc
+reens/LibraryScree
+n.tsx
+MOCK_LIBRARY
+hardcoded. No
+API integration.
+Displays fake data
+to users.
+Implement GET
+/api/library/liked,
+GET
+/api/library/history,
+GET
+/api/library/followin
+g API routes.
+Replace
+MOCK_LIBRARY
+with React Query
+hooks fetching
+real data.
+9 Medium apps/mobile/src/sc
+reens/ProfileScree
+n.tsx
+Hardcoded
+'Aurora Veil' profile
+with mock stats
+(24 tracks, 12K
+plays, $840
+earned). No real
+user data.
+Fetch
+authenticated user
+profile from GET
+/api/user/profile.
+Replace all
+hardcoded values
+with real API data.
+10 Medium apps/mobile/src/sc
+reens/StudioScree
+n.tsx
+MOCK_TRACKS
++ hardcoded
+chartData. NFT
+listing button
+non-functional. No
+real artist
+analytics.
+Fetch real tracks
+from GET
+/api/studio/catalog.
+Fetch real
+earnings from
+GET
+/api/studio/earning
+s. Wire NFT listing
+button to
+Linking.openURL
+for web mint flow.
+11 Medium apps/mobile/src/pr
+oviders/HarmonyW
+alletProvider.tsx
+Uses
+@solana/wallet-ad
+apter-react-ui
+(web library that
+depends on
+browser DOM
+APIs) in React
+Native. Will crash
+on mobile devices.
+Replace with
+Mobile Wallet
+Adapter protocol
+(@solana-mobile/
+mobile-wallet-adap
+ter-protocol) or
+Phantom deeplink
+integration.
+Remove
+WalletModalProvid
+er import.
+Built with Spine AI on 2026-06-23 71
+12 Medium apps/mobile/src/sc
+reens/HomeScree
+n.tsx
+DAO proposals
+section uses
+MOCK_PROPOSA
+LS hardcoded. No
+real governance
+integration.
+Implement GET
+/api/dao/active
+endpoint. Replace
+MOCK_PROPOSA
+LS with React
+Query hook. Add
+empty state if no
+active proposals.
+13 Low package.json (root) Spurious
+multichain-tradingbot: file:../..
+dependency.
+Likely a
+copy-paste artifact
+from another
+project. Will cause
+npm install to fail if
+the relative path
+does not resolve.
+Remove
+multichain-tradingbot from
+dependencies
+object. Run npm
+install to verify
+clean install.
+14 Low packages/streamworker/ (missing
+file)
+No wrangler.toml
+exists. Cloudflare
+Worker cannot be
+deployed. Stream
+counting does not
+work in production.
+Create
+packages/streamworker/wrangler.to
+ml with name,
+main,
+compatibility_date,
+kv_namespaces
+binding, and
+queues.producers
+binding. See
+Action 2 in
+Section 8.
+15 Low All workspace
+directories
+(missing files)
+No per-package
+package.json files
+exist in any
+workspace. npm
+workspaces
+declared in root
+but individual
+package configs
+missing.
+Dependency
+resolution is
+broken for
+workspace-to-work
+space imports.
+Create
+package.json in
+each of the 8
+workspace
+directories. See
+Action 4 in
+Section 8 for
+exact content.
+Built with Spine AI on 2026-06-23 72
+References
+[1] Repo Audit Raw
+Datahttps://app.getspine.ai/canvas/cf1183fc-4df9-4aaf-b98e-0283fb2c5c40?blockId=2115d80b-86c
+d-4878-ad08-e9b0596857c7
+[3] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[4] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[5] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[6] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[7] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[8] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[9] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[10] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[11] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[12] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[13] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[14] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[15] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[16] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[17] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[18] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[19] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[20] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[21] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[22] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[23] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[24] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[25] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[26] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[27] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[28] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[29] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[30] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[31] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[32] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[33] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[34] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[35] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[36] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[37] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+[38] Harmony_ Full Strategic Document _Sections 1_6__ee30a21d.docx
+Built with Spine AI on 2026-06-23 73
+References
+[1] "Repo Audit Raw Data".
+Built with Spine AI on 2026-06-23 74

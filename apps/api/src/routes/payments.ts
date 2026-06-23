@@ -1,10 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { createArtistConnectAccount, processTrackPurchase } from '@harmony/payments';
+import { requireAuth } from '../auth.js';
 import { db } from '../db.js';
 
 export async function paymentRoutes(fastify: FastifyInstance) {
   // 1. Create Stripe Connect Onboarding Account Link
-  fastify.post('/api/payments/onboard', async (request, reply) => {
+  fastify.post('/api/payments/onboard', { preHandler: [requireAuth] }, async (request, reply) => {
     const { artistId, email } = request.body as { artistId: string; email: string };
     if (!artistId || !email) {
       return reply.status(400).send({ error: 'Missing artistId or email' });
@@ -19,7 +20,7 @@ export async function paymentRoutes(fastify: FastifyInstance) {
   });
 
   // 2. Process Purchase & Split Revenue
-  fastify.post('/api/payments/purchase', async (request, reply) => {
+  fastify.post('/api/payments/purchase', { preHandler: [requireAuth] }, async (request, reply) => {
     const { listenerId, artistConnectId, amountInCents } = request.body as {
       listenerId: string;
       artistConnectId: string;

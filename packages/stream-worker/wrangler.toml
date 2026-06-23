@@ -1,0 +1,15 @@
+name = "harmony-stream-counter"
+main = "stream-counter.ts"
+compatibility_date = "2026-06-22"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "STREAM_KV"
+id = "YOUR_KV_NAMESPACE_ID"
+
+[[queues.producers]]
+binding = "STREAM_QUEUE"
+queue = "harmony-stream-events"
+
+[vars]
+ENVIRONMENT = "production"

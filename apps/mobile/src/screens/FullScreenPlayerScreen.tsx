@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Dimensions, PanResponder } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { Slider } from '@react-native-community/slider';
+import Slider from '@react-native-community/slider';
 import { Theme } from '../theme/Theme';
 import { usePlayer } from '../providers/PlayerProvider';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -132,8 +132,8 @@ export function FullScreenPlayerScreen({ route, navigation }: any) {
               maximumValue={displayDuration || 100}
               value={displayPosition}
               onSlidingStart={() => setIsSeeking(true)}
-              onValueChange={(value) => setSeekValue(value)}
-              onSlidingComplete={(value) => {
+              onValueChange={(value: number) => setSeekValue(value)}
+              onSlidingComplete={(value: number) => {
                 setIsSeeking(false);
                 seekTo(value);
               }}

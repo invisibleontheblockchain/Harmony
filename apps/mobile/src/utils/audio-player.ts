@@ -25,10 +25,10 @@ export const setupPlayer = async () => {
   }
 };
 
-export const playHlsStream = async (trackId: string, title: string, artist: string, artworkUrl: string) => {
+export const playHlsStream = async (trackId: string, url: string, title: string, artist: string, artworkUrl: string) => {
   await TrackPlayer.add({
     id: trackId,
-    url: `https://cdn.harmony.fm/tracks/${trackId}/master.m3u8`,
+    url: url,
     type: TrackType.HLS,
     title: title,
     artist: artist,

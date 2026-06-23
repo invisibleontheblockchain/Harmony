@@ -1,0 +1,8 @@
+{
+  "name": "@harmony/db-schema",
+  "version": "0.1.0",
+  "description": "Harmony PostgreSQL schema and migrations",
+  "scripts": {
+    "migrate": "psql $DATABASE_URL -f schema.sql"
+  }
+}

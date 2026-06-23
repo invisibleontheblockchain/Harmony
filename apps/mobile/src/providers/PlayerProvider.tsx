@@ -33,7 +33,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [queue, setQueue] = useState<Track[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState({ position: 0, duration: 0 });
+  const trackProgress = useProgress();
   const playerReady = useRef(false);
 
   const ensurePlayerReady = useCallback(async () => {
@@ -49,6 +49,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       await TrackPlayer.reset();
       await playHlsStream(
         track.id,
+        track.fileUrlHls || '',
         track.title,
         track.artist,
         track.artwork || ''
@@ -113,7 +114,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
         currentTrack,
         isPlaying,
         queue,
-        progress,
+        progress: { position: trackProgress.position, duration: trackProgress.duration },
         play,
         pause,
         resume,

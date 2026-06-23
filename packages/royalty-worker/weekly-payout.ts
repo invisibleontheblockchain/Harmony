@@ -4,7 +4,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function processWeeklyPayouts(db: any) {
   const pendingPayouts = await db.query(`
-    SELECT rh.id AS rights_holder_id, SUM(rl.amount_cents) AS pending_balance_cents
+    SELECT rh.id AS rights_holder_id, rh.stripe_connect_account_id, SUM(rl.amount_cents) AS pending_balance_cents
     FROM royalty_ledger rl
     JOIN rights_holders rh ON rl.rights_holder_id = rh.id
     WHERE rl.created_at <= NOW() 
