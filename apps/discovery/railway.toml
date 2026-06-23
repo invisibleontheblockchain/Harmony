@@ -7,3 +7,7 @@ healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+
+[cron]
+schedule = "0 3 * * *"
+command = "python als_trainer.py"

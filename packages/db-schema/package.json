@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Harmony PostgreSQL schema and migrations",
   "scripts": {
-    "migrate": "psql $DATABASE_URL -f schema.sql"
+    "migrate": "psql $DATABASE_URL -f schema.sql",
+    "migrate:rec": "psql $DATABASE_URL -f recommendations.sql"
   }
 }
