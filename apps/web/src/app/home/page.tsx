@@ -7,8 +7,8 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import { fetchTracks, fetchRecommendations } from '@/lib/api-client';
 
 export default function HomePage() {
-  const { data: allTracks, isLoading: loadingAll } = useQuery({ queryKey: ['/api/tracks'] });
-  const { data: recommendations, isLoading: loadingRecs } = useQuery({ queryKey: ['/api/recommendations?userId=me'] });
+  const { data: allTracks, isLoading: loadingAll } = useQuery<any>({ queryKey: ['/api/tracks'] });
+  const { data: recommendations, isLoading: loadingRecs } = useQuery<any>({ queryKey: ['/api/recommendations?userId=me'] });
 
   const rows = [
     { title: 'Continue Listening', data: allTracks?.slice(0, 4) || [] },

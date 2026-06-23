@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import SectionHeader from '@/components/ui/SectionHeader';
+import Link from 'next/link';
 
 export default function EarningsPage() {
   return (

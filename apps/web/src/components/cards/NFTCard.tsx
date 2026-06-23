@@ -5,7 +5,7 @@ interface NFTCardProps {
   id: string;
   title: string;
   artist: string;
-  price: number;
+  price?: number;
   edition?: string;
   isOwned?: boolean;
 }
@@ -23,7 +23,11 @@ export default function NFTCard({ id, title, artist, price, edition = '1/1', isO
         <p className="text-sm font-medium text-[var(--text-primary)] truncate">{title}</p>
         <p className="text-xs text-[var(--text-secondary)] truncate">{artist}</p>
         <div className="flex items-center justify-between mt-2">
-          <span className="text-sm font-bold text-[var(--accent-purple)]">{price} ETH</span>
+          {price !== undefined ? (
+            <span className="text-sm font-bold text-[var(--accent-purple)]">{price} SOL</span>
+          ) : (
+            <span className="text-xs text-[var(--text-secondary)]">Not Listed</span>
+          )}
           <span className="text-xs text-[var(--text-tertiary)]">{edition}</span>
         </div>
       </div>

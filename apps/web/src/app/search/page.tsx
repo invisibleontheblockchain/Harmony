@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { searchTracks } from '@/lib/api-client';
 import TrackCard from '@/components/cards/TrackCard';
 import EmptyState from '@/components/ui/EmptyState';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');

@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import SubscriptionTierCard from '@/components/cards/SubscriptionTierCard';
 import EmptyState from '@/components/ui/EmptyState';
+import Link from 'next/link';
 
 export default function FansPage() {
   const { data: subscribers } = useQuery({

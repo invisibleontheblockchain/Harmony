@@ -2,7 +2,7 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-async function apiFetch(path: string, options?: RequestInit) {
+async function apiFetch<T = any>(path: string, options?: RequestInit): Promise<T> {
   const url = path.startsWith('http') ? path : `${API_BASE}${path}`;
   const res = await fetch(url, {
     ...options,
@@ -10,7 +10,7 @@ async function apiFetch(path: string, options?: RequestInit) {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 export async function fetchTracks(options?: { genre?: string; limit?: number; offset?: number }) {

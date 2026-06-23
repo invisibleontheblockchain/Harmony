@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import NFTCard from '@/components/cards/NFTCard';
 import EmptyState from '@/components/ui/EmptyState';
+import Link from 'next/link';
 
 export default function NFTsPage() {
   const [activeTab, setActiveTab] = useState<'listed' | 'owned' | 'minted'>('listed');

@@ -1,5 +1,6 @@
 'use client';
-import { QueryClient, QueryFunction } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryFunction } from '@tanstack/react-query';
+import React from 'react';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
@@ -12,22 +13,19 @@ async function apiFetch(path: string, options?: RequestInit) {
   return res.json();
 }
 
-export const queryFn: QueryFunction<any, string> = async ({ queryKey }) => {
+export const queryFn: QueryFunction<any, any> = async ({ queryKey }) => {
   const [path] = queryKey as [string];
   return apiFetch(path);
 };
 
-if (typeof window !== 'undefined' && !(window as any).__HARMONY_QUERY_CLIENT__) {
-  (window as any).__HARMONY_QUERY_CLIENT__ = new QueryClient({
-    defaultOptions: { queries: { staleTime: 1000 * 60, refetchOnWindowFocus: false, queryFn } },
-  });
-}
-
 export function QueryProvider({ children }: { children: React.ReactNode }) {
-  const client = (window as any).__HARMONY_QUERY_CLIENT__ || new QueryClient({
-    defaultOptions: { queries: { staleTime: 1000 * 60, refetchOnWindowFocus: false, queryFn } },
-  });
-  return children;
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: { queries: { staleTime: 1000 * 60, refetchOnWindowFocus: false, queryFn } },
+      })
+  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
 /* eslint-disable @next/next/no-img-element */

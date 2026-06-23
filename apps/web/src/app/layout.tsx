@@ -1,12 +1,9 @@
-import './globals.css';
+import '../styles/globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
+import AuthProvider from '@/components/providers/AuthProvider';
 import { QueryProvider } from '@/lib/query-client';
 import Sidebar from '@/components/layout/Sidebar';
 import PlayerBar from '@/components/player/PlayerBar';
-
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
   title: 'Harmony — Where Sound Lives on Chain',
@@ -15,9 +12,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className="dark">
-        <body className={inter.className}>
+    <html lang="en" className="dark">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body className="font-sans" style={{ fontFamily: "'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" }}>
+        <AuthProvider>
           <QueryProvider>
             <div className="flex h-screen overflow-hidden">
               <Sidebar />
@@ -25,8 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
             <PlayerBar />
           </QueryProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </AuthProvider>
+      </body>
+    </html>
   );
 }
+

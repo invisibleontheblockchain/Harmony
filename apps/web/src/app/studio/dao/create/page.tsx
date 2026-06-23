@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { RichTextEditor } from '@/components/forms/RichTextEditor';
+import RichTextEditor from '@/components/forms/RichTextEditor';
 
 export default function CreateProposalPage() {
   const [title, setTitle] = useState('');
