@@ -1,18 +1,25 @@
 {
-  "name": "harmony-mobile",
-  "version": "0.1.0",
-  "main": {
-    "js": "index.js",
-    "java": "index.java"
-  },
-  "dependencies": {
-    "react": "18.0.0",
-    "react-native": "0.73.0",
-    "react-native-track-player": "^4.0.0",
-    "react-native-audio-waveform": "^1.0.0",
-    "victory-native": "^4.0.0",
-    "expo": "~50.0.0",
-    "expo-document-picker": "~11.0.0",
-    "expo-in-app-purchases": "~15.0.0"
+  "expo": {
+    "name": "harmony-mobile",
+    "slug": "harmony-mobile",
+    "version": "0.1.0",
+    "sdkVersion": "50.0.0",
+    "platforms": ["ios", "android"],
+    "assetBundlePatterns": ["**/*"],
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#121212",
+          "image": "./assets/splash-icon.png"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "harmony-mobile"
+      }
+    }
   }
 }

@@ -3,7 +3,15 @@
   "version": "0.1.0",
   "main": "weekly-payout.js",
   "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts"
+  },
   "dependencies": {
-    "stripe": "^14.0.0"
+    "stripe": "^14.0.0",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1"
   }
 }

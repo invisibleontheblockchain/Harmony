@@ -4,12 +4,10 @@
   "main": "nft-mint.js",
   "type": "module",
   "dependencies": {
-    "@metaplex-foundation/umi-bundle-defaults": "^2.0.0",
-    "@metaplex-foundation/umi-signer-wallet-adapters": "^2.0.0",
-    "@metaplex-foundation/mpl-core": "^2.0.0",
-    "@irys/sdk": "^0.1.0",
-    "@solana/wallet-adapter-react": "^0.15.0",
-    "@solana/wallet-adapter-react-ui": "^0.15.0",
-    "@solana/wallet-adapter-wallets": "^0.15.0"
+    "@metaplex-foundation/umi-bundle-defaults": "^1.0.0",
+    "@metaplex-foundation/umi-signer-wallet-adapters": "^1.0.0",
+    "@metaplex-foundation/mpl-core": "^1.0.0",
+    "@metaplex-foundation/umi": "^1.0.0",
+    "@irys/sdk": "^0.1.0"
   }
 }

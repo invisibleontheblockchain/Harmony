@@ -1,10 +1,27 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- TABLE 0: USERS (core identity — artists, listeners, admins)
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  clerk_id VARCHAR(255) UNIQUE,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  display_name VARCHAR(255) NOT NULL,
+  avatar_url TEXT,
+  role VARCHAR(50) CHECK (role IN ('listener', 'artist', 'admin')) DEFAULT 'listener',
+  bio TEXT,
+  is_verified BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_users_clerk_id ON users(clerk_id);
+CREATE INDEX idx_users_role ON users(role);
+
 -- TABLE 1: TRACKS
 CREATE TABLE tracks (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  artist_id UUID NOT NULL,
+  artist_id UUID NOT NULL REFERENCES users(id),
   title VARCHAR(255) NOT NULL,
   duration_seconds INTEGER NOT NULL,
   file_url_hls TEXT NOT NULL,
@@ -25,7 +42,7 @@ CREATE INDEX idx_tracks_status ON tracks(status);
 -- TABLE 2: RIGHTS_HOLDERS
 CREATE TABLE rights_holders (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID UNIQUE NOT NULL,
+  user_id UUID UNIQUE NOT NULL REFERENCES users(id),
   display_name VARCHAR(255) NOT NULL,
   stripe_connect_account_id VARCHAR(255) UNIQUE,
   wallet_address VARCHAR(255) UNIQUE,
@@ -81,6 +98,8 @@ CREATE TABLE stream_events (
 
 CREATE INDEX idx_stream_events_uncredited ON stream_events(track_id) WHERE royalty_credited = FALSE;
 CREATE TABLE stream_events_y2026m06 PARTITION OF stream_events FOR VALUES FROM ('2026-06-01') TO ('2026-07-01');
+CREATE TABLE stream_events_y2026m07 PARTITION OF stream_events FOR VALUES FROM ('2026-07-01') TO ('2026-08-01');
+CREATE TABLE stream_events_y2026m08 PARTITION OF stream_events FOR VALUES FROM ('2026-08-01') TO ('2026-09-01');
 
 -- TABLE 5: ROYALTY_LEDGER (Append-Only)
 CREATE TABLE royalty_ledger (

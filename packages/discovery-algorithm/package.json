@@ -1,11 +1,5 @@
 {
   "name": "@harmony/discovery-algorithm",
   "version": "0.1.0",
-  "main": "als_recommender.py",
-  "dependencies": {
-    "implicit": "^0.7.0",
-    "scipy": "^1.13.0",
-    "numpy": "^2.0.0",
-    "essentia": "^2.1b6"
-  }
+  "main": "als_recommender.py"
 }

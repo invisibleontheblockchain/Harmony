@@ -1,4 +1,4 @@
-import TrackPlayer, { Capability, AppKilledPlaybackBehavior } from 'react-native-track-player';
+import TrackPlayer, { Capability, AppKilledPlaybackBehavior, TrackType } from 'react-native-track-player';
 
 export const setupPlayer = async () => {
   try {
@@ -29,7 +29,7 @@ export const playHlsStream = async (trackId: string, title: string, artist: stri
   await TrackPlayer.add({
     id: trackId,
     url: `https://cdn.harmony.fm/tracks/${trackId}/master.m3u8`,
-    type: 'hls',
+    type: TrackType.HLS,
     title: title,
     artist: artist,
     artwork: artworkUrl,

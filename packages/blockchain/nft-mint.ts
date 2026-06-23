@@ -3,30 +3,50 @@ import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-ad
 import { generateSigner, publicKey } from '@metaplex-foundation/umi';
 import { createV1 } from '@metaplex-foundation/mpl-core';
 
-const HARMONY_TREASURY = publicKey('YOUR_HARMONY_TREASURY_WALLET_ADDRESS');
+const HARMONY_TREASURY = publicKey(
+  process.env.HARMONY_TREASURY_WALLET || 'YOUR_HARMONY_TREASURY_WALLET_ADDRESS'
+);
 
-const umi = createUmi('https://api.mainnet-beta.solana.com')
-  .use(walletAdapterIdentity(wallet));
+const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com';
 
-export async function mintHarmonyTrackNFT(metadataUri: string, artistWallet: string) {
+export async function mintHarmonyTrackNFT(
+  wallet: any,
+  trackName: string,
+  metadataUri: string,
+  artistWallet: string
+): Promise<string> {
+  const umi = createUmi(SOLANA_RPC).use(walletAdapterIdentity(wallet));
+
   const asset = generateSigner(umi);
   const tx = await createV1(umi, {
     asset,
-    name: 'Track Title',
+    name: trackName,
     uri: metadataUri,
-    plugins: [{
-      type: 'Royalties',
-      basisPoints: 1000,
-      creators: [{ 
-        address: publicKey(artistWallet), 
-        percentage: 75 
-      },{ 
-        address: HARMONY_TREASURY, 
-        percentage: 25 
-      }],
-      ruleSet: 'Enforced'
-    }]
+    plugins: [
+      {
+        plugin: {
+          __kind: 'Royalties',
+          fields: [
+            {
+              basisPoints: 1000, // 10% on-chain royalty
+              creators: [
+                {
+                  address: publicKey(artistWallet),
+                  percentage: 75,
+                },
+                {
+                  address: HARMONY_TREASURY,
+                  percentage: 25,
+                },
+              ],
+              ruleSet: { __kind: 'None' },
+            },
+          ],
+        },
+        authority: null,
+      },
+    ],
   }).sendAndConfirm(umi);
-  
+
   return asset.publicKey.toString();
 }

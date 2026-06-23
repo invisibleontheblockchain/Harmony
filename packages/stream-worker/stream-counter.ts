@@ -1,5 +1,5 @@
 export default {
-  async fetch(request, env) {
+  async fetch(request: any, env: any) {
     const url = new URL(request.url);
     const trackId = url.searchParams.get("track_id");
     const listenerId = url.searchParams.get("listener_id");

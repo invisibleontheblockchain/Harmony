@@ -1,10 +1,22 @@
 import Irys from '@irys/sdk';
 
-async function uploadMetadataToArweave(trackData: any, wallet: any) {
+interface TrackData {
+  title: string;
+  artist: string;
+  genre: string;
+  isrc: string;
+  coverArtArweaveHash: string;
+  audioPreviewHash: string;
+}
+
+export async function uploadMetadataToArweave(
+  trackData: TrackData,
+  wallet: any
+): Promise<string> {
   const irys = new Irys({
-    url: 'https://node1.irys.xyz',
+    url: process.env.IRYS_NODE_URL || 'https://devnet.irys.xyz',
     token: 'solana',
-    key: wallet.secretKey
+    key: wallet.secretKey,
   });
 
   const metadata = {
@@ -15,13 +27,13 @@ async function uploadMetadataToArweave(trackData: any, wallet: any) {
     attributes: [
       { trait_type: 'Artist', value: trackData.artist },
       { trait_type: 'Genre', value: trackData.genre },
-      { trait_type: 'ISRC', value: trackData.isrc }
-    ]
+      { trait_type: 'ISRC', value: trackData.isrc },
+    ],
   };
 
   const receipt = await irys.upload(JSON.stringify(metadata), {
-    tags: [{ name: 'Content-Type', value: 'application/json' }]
+    tags: [{ name: 'Content-Type', value: 'application/json' }],
   });
-  
+
   return `https://gateway.irys.xyz/${receipt.id}`;
 }

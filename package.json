@@ -19,8 +19,15 @@
   },
   "homepage": "https://github.com/invisibleontheblockchain/Harmony#readme",
   "description": "",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "devDependencies": {
     "@types/node": "^26.0.0",
     "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "multichain-trading-bot": "file:../.."
   }
 }

@@ -1,8 +1,8 @@
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-export async function processWeeklyPayouts(db) {
+export async function processWeeklyPayouts(db: any) {
   const pendingPayouts = await db.query(`
     SELECT rh.id AS rights_holder_id, SUM(rl.amount_cents) AS pending_balance_cents
     FROM royalty_ledger rl
@@ -19,8 +19,9 @@ export async function processWeeklyPayouts(db) {
   `);
   
   for (const payout of pendingPayouts) {
+    let batchId: any = null;
     try {
-      const batchId = await db.insertPayoutBatch(payout.rights_holder_id, payout.pending_balance_cents);
+      batchId = await db.insertPayoutBatch(payout.rights_holder_id, payout.pending_balance_cents);
       const transfer = await stripe.transfers.create({
         amount: payout.pending_balance_cents,
         currency: 'usd',
@@ -31,7 +32,9 @@ export async function processWeeklyPayouts(db) {
       await db.insertLedgerDebit(payout.rights_holder_id, payout.pending_balance_cents, batchId);
     } catch (error) {
       console.error(`Payout failed for ${payout.rights_holder_id}:`, error);
-      await db.updatePayoutBatchStatus(batchId, 'failed');
+      if (batchId) {
+        await db.updatePayoutBatchStatus(batchId, 'failed');
+      }
     }
   }
 }
