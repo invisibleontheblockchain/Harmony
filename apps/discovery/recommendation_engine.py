@@ -294,6 +294,14 @@ def get_track_metadata(conn, track_ids: list[str]) -> dict[str, dict]:
 def get_recommendations(user_id: str, limit: int = FINAL_LIMIT) -> list[dict]:
     conn = get_db_connection()
     try:
+        # A/B test assignment (spec: harmony_homepage_recs_2024)
+        variant = assign_variant(conn, user_id, "harmony_homepage_recs_2024")
+        effective_limit = limit
+        if variant == "control":
+            effective_limit = min(limit, 20)
+        elif variant == "treatment_b":
+            effective_limit = min(limit + 2, 52)
+
         # Cache check
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
@@ -306,20 +314,31 @@ def get_recommendations(user_id: str, limit: int = FINAL_LIMIT) -> list[dict]:
             )
             cached = cur.fetchone()
         if cached:
-            results = cached["recommendations"][:limit]
+            results = cached["recommendations"][:effective_limit]
             enriched = get_track_metadata(conn, [r["track_id"] for r in results])
             return [enriched.get(r["track_id"], r) for r in results]
 
         user_centroid = get_user_clap_centroid(conn, user_id)
         if user_centroid is None:
-            return get_cold_start_recommendations(conn, limit)
+            return get_cold_start_recommendations(conn, effective_limit)
 
         candidates = get_candidate_tracks(conn, user_id, user_centroid)
         user_als = get_user_als_factors(conn, user_id)
         user_genre_history = get_user_genre_history(conn, user_id)
         scored = score_candidates(candidates, user_als, user_genre_history)
         diverse = enforce_diversity(scored)
-        top = diverse[:limit]
+
+        # Treatment B: inject 2 serendipity slots
+        if variant == "treatment_b" and len(diverse) >= effective_limit:
+            standard = diverse[:effective_limit - 2]
+            serendipity_pool = diverse[effective_limit - 2:]
+            picks = serendipity_pool[:2]
+            for i, pick in enumerate(picks):
+                pos = (i + 1) * ((effective_limit - 2) // 2)
+                standard.insert(min(pos, len(standard)), {**pick, "is_serendipity": True})
+            diverse = standard
+
+        top = diverse[:effective_limit]
 
         track_ids = [t["id"] for t in top]
         metadata = get_track_metadata(conn, track_ids)
@@ -331,7 +350,8 @@ def get_recommendations(user_id: str, limit: int = FINAL_LIMIT) -> list[dict]:
                     "track_id": t["id"],
                     "rank": len(final) + 1,
                     "final_score": t["final_score"],
-                    "is_serendipity": False,
+                    "is_serendipity": t.get("is_serendipity", False),
+                    "ab_variant": variant,
                     **meta,
                 }
             )
@@ -358,6 +378,31 @@ def get_recommendations(user_id: str, limit: int = FINAL_LIMIT) -> list[dict]:
         return final
     finally:
         conn.close()
+
+
+def assign_variant(conn, user_id: str, test_name: str) -> str:
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT variant FROM ab_test_assignments WHERE user_id = %s AND experiment_id = %s",
+            (user_id, test_name),
+        )
+        row = cur.fetchone()
+    if row:
+        return row[0]
+    import hashlib
+    hash_val = int(hashlib.md5(f"{test_name}:{user_id}".encode()).hexdigest()[:8], 16) % 100
+    variant = "control" if hash_val < 20 else ("treatment_a" if hash_val < 60 else "treatment_b")
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO ab_test_assignments (user_id, experiment_id, variant)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (user_id, experiment_id) DO NOTHING
+            """,
+            (user_id, test_name, variant),
+        )
+    conn.commit()
+    return variant
 
 
 def get_cold_start_recommendations(conn, limit: int) -> list[dict]:
