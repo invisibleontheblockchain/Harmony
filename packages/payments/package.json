@@ -1,0 +1,9 @@
+{
+  "name": "@harmony/payments",
+  "version": "0.1.0",
+  "main": "stripe-connect.js",
+  "type": "module",
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}

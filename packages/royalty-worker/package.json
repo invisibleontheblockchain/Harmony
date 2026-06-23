@@ -1,0 +1,9 @@
+{
+  "name": "@harmony/royalty-worker",
+  "version": "0.1.0",
+  "main": "weekly-payout.js",
+  "type": "module",
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@harmony/stream-worker",
+  "version": "0.1.0",
+  "main": "r2-upload.js",
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "@aws-sdk/s3-request-presigner": "^3.0.0"
+  }
+}
