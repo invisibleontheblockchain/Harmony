@@ -1,0 +1,28 @@
+{
+  "name": "@harmony/discovery",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Harmony discovery engine: CLAP audio embeddings, ALS collaborative filtering, 4-layer recommendation scoring",
+  "scripts": {
+    "start": "uvicorn main:app --host 0.0.0.0 --port $PORT",
+    "dev": "uvicorn main:app --host 0.0.0.0 --port 8001 --reload",
+    "train-als": "python als_trainer.py",
+    "train-genre": "python genre_classifier.py",
+    "test": "python -m pytest tests/ -v"
+  },
+  "dependencies": {
+    "fastapi": "^0.110.0",
+    "uvicorn": "^0.29.0",
+    "msclap": "==1.3.3",
+    "essentia": "==2.1b6.dev1110",
+    "torch": "==2.2.0",
+    "torchaudio": "==2.2.0",
+    "librosa": "==0.10.1",
+    "numpy": "==1.26.4",
+    "psycopg2-binary": "==2.9.9",
+    "pgvector": "==0.2.4",
+    "python-dotenv": "==1.0.1",
+    "httpx": "^0.27.0",
+    "pydantic": "^2.6.0"
+  }
+}

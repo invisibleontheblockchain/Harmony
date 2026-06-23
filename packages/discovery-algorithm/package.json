@@ -1,9 +1,18 @@
 {
   "name": "@harmony/discovery-algorithm",
-  "version": "0.1.0",
-  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Harmony recommendation algorithm TypeScript utilities: scoring, diversity, serendipity, A/B testing",
+  "main": "index.ts",
   "scripts": {
-    "start": "python server.py",
-    "train": "python als_recommender.py"
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fastify": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
   }
 }

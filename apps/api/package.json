@@ -16,6 +16,7 @@
     "pg": "^8.11.3",
     "stripe": "^14.0.0",
     "@clerk/fastify": "^1.0.0",
+    "axios": "^1.7.0",
     "@harmony/blockchain": "*",
     "@harmony/payments": "*",
     "@harmony/stream-worker": "*"

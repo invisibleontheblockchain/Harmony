@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { generateUploadUrl } from '@harmony/stream-worker';
 import { requireAuth } from '../auth.js';
 import { db } from '../db.js';
+import { triggerAudioProcessing } from '../services/audioProcessor.js';
 
 export async function trackRoutes(fastify: FastifyInstance) {
   // 1. Get Presigned Upload URL (auth required)
@@ -52,7 +53,6 @@ export async function trackRoutes(fastify: FastifyInstance) {
     }
 
     try {
-      // Execute inserts inside a transaction to defer constraint validation till COMMIT
       await db.query('BEGIN');
 
       const trackId = id || crypto.randomUUID();
@@ -71,8 +71,13 @@ export async function trackRoutes(fastify: FastifyInstance) {
         );
       }
 
-      // Deferrable trigger check_split_sum will run now
       await db.query('COMMIT');
+
+      // Trigger async audio processing (CLAP + Essentia) — non-blocking
+      const audioUrl = fileUrlRaw;
+      triggerAudioProcessing(trackId, audioUrl).catch((err) => {
+        fastify.log.error({ err }, `Audio processing trigger failed for track ${trackId}`);
+      });
 
       return reply.status(201).send({ message: 'Track registered successfully', trackId });
     } catch (error: any) {
